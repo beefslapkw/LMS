@@ -21,9 +21,7 @@
             $stmt->execute();
             $userdata = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            $password = password_hash($json['password'], PASSWORD_DEFAULT);
-
-            if($userdata && $json['username'] == $userdata['username'] && $password == $userdata['password']){
+            if($userdata && $json['username'] == $userdata['username'] && password_verify($json['password'] ,$userdata['password'])){
                 return "Successfully Logged In";
             }
             else{
