@@ -15,7 +15,7 @@ const login = async() => {
     
     console.log(response.data);
     if(response.data.username == username){
-        sessionStorage.setItem("fullname", response.data.last_name + " " + response.data.first_name);
+        sessionStorage.setItem("fullname", response.data.first_name + " " + response.data.last_name);
         switch(response.data.role_id){
             case 1:
                 window.location.href = "./templates/headLibrarian.html";

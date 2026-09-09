@@ -10,6 +10,38 @@
     }
 
     class User{
+        function getAllUsers(){
+            include "connection.php";
+
+            $sql = "SELECT u.user_id, u.id_number, u.last_name, u.first_name, u.contact_number, u.email_address, u.username,
+                        r.role_type, d.department_name, u.is_active
+                    FROM users u
+                    INNER JOIN roles r ON u.role_id=r.role_id
+                    LEFT JOIN departments d ON u.department_id=d.department_id";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute();
+            $rs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            return json_encode($rs);
+        }
+        function getUser($json){
+            include "connection.php";
+
+            $json = json_decode($json, true);
+
+            $sql = "SELECT u.user_id, u.id_number, u.last_name, u.first_name, u.contact_number, u.email_address, u.username,
+                        r.role_type, d.department_name, u.is_active
+                    FROM users u
+                    INNER JOIN roles r ON u.role_id=r.role_id
+                    LEFT JOIN departments d ON u.department_id=d.department_id
+                    WHERE u.user_id=:user_id";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindParam(":user_id", $json['user_id']);
+            $stmt->execute();
+            $rs = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return json_encode($rs);
+        }
         function login($json){
             include "connection.php";
 
@@ -82,6 +114,12 @@
 
     $user = new User();
     switch($operation){
+        case "getAllUsers":
+            echo $user->getAllUsers();
+            break;
+        case "getUser":
+            echo $user->getUser($json);
+            break;
         case "login":
             echo $user->login($json);
             break;

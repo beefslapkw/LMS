@@ -5,12 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Head Librarian Interface</title>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script type="module" src="../script/headLibrarian.js"></script>
 </head>
 <body>
-    <h1 id="welcome"></h1>
+    <h1 id="welcome"></h1> <br>
+    <h2>Catalog</h2> <br>
+    <h2>Users List</h2>
+    <div id="tablediv">
+
+    </div> <br>
+    <div id="display" style="display:none"> 
+
+    </div> <br>
     <a href="../index.html">Logout</a>
-    <script>
-        document.getElementById('welcome').innerHTML = `Welcome Head Librarian ${sessionStorage.fullname}`;
-    </script>
 </body>
 </html>
