@@ -13,20 +13,21 @@ const login = async() => {
         params:params
     });
     
+    console.log(response.data);
     if(response.data.username == username){
-        sessionStorage.setItem("fullname", response.data.last_name + response.data.first_name);
+        sessionStorage.setItem("fullname", response.data.last_name + " " + response.data.first_name);
         switch(response.data.role_id){
             case 1:
-                window.location.href = "headLibrarian.html";
+                window.location.href = "./templates/headLibrarian.html";
                 break;
             case 2:
-                window.location.href = "studentAssistant.html";
+                window.location.href = "./templates/studentAssistant.html";
                 break;
             case 3:
-                window.location.href = "student.html";
+                window.location.href = "./templates/student.html";
                 break;
             case 4:
-                window.location.href = "faculty.html";
+                window.location.href = "./templates/faculty.html";
                 break;
             default:
                 alert("ERROR");

@@ -22,7 +22,7 @@
             $userdata = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if($userdata && $json['username'] == $userdata['username'] && password_verify($json['password'] ,$userdata['password'])){
-                return "Successfully Logged In";
+                return json_encode($userdata);
             }
             else{
                 return "Incorrect username or password";
