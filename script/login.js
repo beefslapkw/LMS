@@ -1,6 +1,6 @@
-const login = async() => {
-    const url = "http://localhost/LMS";
+const url = "http://localhost/LMS/api";
 
+const login = async() => {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
 

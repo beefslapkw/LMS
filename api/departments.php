@@ -6,11 +6,10 @@
         function getAllDepartments(){
             include "connection.php";
 
-            $sql = "SELECT * FROM users WHERE username=:username";
+            $sql = "SELECT * FROM departments";
             $stmt = $conn->prepare($sql);
-            $stmt->bindParam(":username", $json['username']);
             $stmt->execute();
-            $rs = $stmt->fetch(PDO::FETCH_ASSOC);
+            $rs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             return json_encode($rs);
         }
@@ -27,7 +26,7 @@
 
     $department = new Department();
     switch($operation){
-        case "login":
+        case "getAllDepartments":
             echo $department->getAllDepartments();
             break;
     }

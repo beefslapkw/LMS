@@ -38,7 +38,8 @@
                 return "Username already exists";
             }
 
-            $sql2 = "INSERT INTO users(username, password) VALUES(:username, :password)";
+            $sql2 = "INSERT INTO users(role_id, id_number, last_name, first_name, contact_number, email_address,
+                        username, password, department_id) VALUES(:username, :password)";
             $stmt2 = $conn->prepare($sql2);
             $stmt2->bindParam(":username", $json['username']);
             $stmt2->bindParam(":password", $json['password']);
