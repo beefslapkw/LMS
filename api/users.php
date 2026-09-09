@@ -2,6 +2,13 @@
     header('Content-Type: application/json');
     header("Access-Control-Allow-Origin: *");
 
+    function checkRoleId($idnum){
+        if(str_starts_with($idnum, 'F')){
+            return 4;
+        }
+        return 3;
+    }
+
     class User{
         function login($json){
             include "connection.php";
@@ -38,11 +45,23 @@
                 return "Username already exists";
             }
 
+            $password = password_hash($json['password'], PASSWORD_DEFAULT);
+            $roleId = checkRoleId($json['id_number']);
+
             $sql2 = "INSERT INTO users(role_id, id_number, last_name, first_name, contact_number, email_address,
-                        username, password, department_id) VALUES(:username, :password)";
+                        username, password, department_id) 
+                    VALUES(:role_id, :id_number, :last_name, :first_name, :contact_number, :email_address,
+                        :username, :password, :department_id)";
             $stmt2 = $conn->prepare($sql2);
+            $stmt2->bindParam(":role_id", $roleId);
+            $stmt2->bindParam(":id_number", $json['id_number']);
+            $stmt2->bindParam(":last_name", $json['last_name']);
+            $stmt2->bindParam(":first_name", $json['first_name']);
+            $stmt2->bindParam(":contact_number", $json['contact_number']);
+            $stmt2->bindParam(":email_address", $json['email_address']);
             $stmt2->bindParam(":username", $json['username']);
-            $stmt2->bindParam(":password", $json['password']);
+            $stmt2->bindParam(":password", $password);
+            $stmt2->bindParam(":department_id", $json['department_id']);
             $stmt2->execute();
             
             $returnValue = 0;
