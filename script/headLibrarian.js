@@ -30,6 +30,7 @@ const getAllUsers = async() => {
 
     if(response.status == 200){
         console.log(response.data);
+        document.getElementById('userscard').innerHTML = `Total User Count: ${response.data.length}`;
         response.data.forEach(user => { 
             let status;
             if(user.is_active == 1){
@@ -68,9 +69,30 @@ const getAllUsers = async() => {
 }
 
 const getAllBooks = async() => {
+    const response = await axios.get(`${url}/books.php`,{
+        params:{operation:"getAllBooks"}
+    })
 
+    if(response.status == 200){
+        console.log(response.data);
+        document.getElementById('bookscard').innerHTML = `Total Books Quantity ${response.data.length}`;
+    }
 }
+
+const getAllAuthors = async() => {
+    const response = await axios.get(`${url}/authors.php`,{
+        params:{operation:"getAllAuthors"}
+    })
+
+    if(response.status == 200){
+        console.log(response.data);
+        document.getElementById('authorscard').innerHTML = `Total Authors Quantity ${response.data.length}`;
+    }
+}
+
 
 document.addEventListener('DOMContentLoaded', () => {
     getAllUsers();
+    getAllBooks();
+    getAllAuthors();
 })
