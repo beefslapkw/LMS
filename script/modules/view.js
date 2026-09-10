@@ -1,27 +1,73 @@
 export const viewDetails = async(user_id) => {
-    const displaydiv = document.getElementById('display');
+    document.getElementById("blank-modal-title").innerText = "View Details";
+
     const user = await getUser(user_id);
 
-    displaydiv.innerHTML = `
-        <h3>User Details</h3>
-        <label>Role:</label>
-        <input type="text" id="newrole" placeholder="${user.role_type}" disabled> <br>
-        <label>ID Number:</label>
-        <input type="text" id="newidnum" placeholder="${user.id_number}" disabled> <br>
-        <label>Last Name:</label>
-        <input type="text" id="newlastn" placeholder="${user.last_name}" disabled> <br>
-        <label>First Name:</label>
-        <input type="text" id="newfirstn" placeholder="${user.first_name}" disabled> <br>
-        <label>Contact Number:</label>
-        <input type="text" id="newcontact" placeholder="${user.contact_number}" disabled> <br>
-        <label>Email Address:</label>
-        <input type="email" id="newemail" placeholder="${user.email_address}" disabled> <br>
-        <label>Username:</label>
-        <input type="text" id="newusername" placeholder="${user.username}" disabled> <br>
-        <label>Department:</label>
-        <input type="text" id="newdepartment" placeholder="${user.department_name}" disabled> <br>
+    const myHtml = `
+        <table class="table table-sm">
+            <tr>
+                <td>Role</td>
+                <td>
+                    ${user.role_type}
+                </td>
+            </tr>
+            <tr>
+                <td>ID Number</td>  
+                <td>
+                    ${user.id_number}
+                <td>
+            </tr>
+            <tr>   
+                <td>Last Name</td>
+                <td>
+                    ${user.last_name}
+                </td>
+            </tr>
+            <tr>
+                <td>First Name</td>
+                <td>
+                    ${user.first_name}
+                </td>
+            </tr>
+            <tr>
+                <td>Contact Number</td>
+                <td>
+                    ${user.contact_number}
+                </td>
+            </tr>      
+            <tr>
+                <td>Email Address</td>
+                <td>
+                    ${user.email_address}
+                </td>
+            </tr>
+            <tr>
+                <td>Username</td>
+                <td>
+                    ${user.username}
+                </td>
+            </tr>
+            <tr>
+                <td>Department</td>
+                <td>
+                    ${user.department_name}
+                </td>
+            </tr> 
+        </table>
     `;
-    displaydiv.style.display = "block";
+
+    document.getElementById("blank-main-div").innerHTML = myHtml;   
+
+    const modalFooter = document.getElementById("blank-modal-footer").innerHTML = `
+        <button type="button" class="btn btn-secondary btn-sm w-100" data-bs-dismiss="modal">Close</button>
+    `;
+
+    const myModal = new bootstrap.Modal(document.getElementById("blank-modal"), {
+        keyboard: true,
+        backdrop: "static",
+    });
+
+    myModal.show();
 }
 
 const getUser = async(user_id) => {

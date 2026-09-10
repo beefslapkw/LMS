@@ -6,22 +6,39 @@
     <title>Head Librarian Interface</title>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script type="module" src="../script/headLibrarian.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 </head>
 <body>
-    <h1 id="welcome"></h1> 
-    <div style="display: flex;">
-        <div id="bookscard"></div> 
-        <div id="copiescard" style="margin-left: 20px"></div>
-        <div id="authorscard" style="margin-left: 20px"></div>
-        <div id="userscard" style="margin-left: 20px"></div>
+    <div class="container mt-5">
+        <div id="header-div"><h1 id="welcome"></h1></div>
+        <div style="display: flex;">
+            <div id="bookscard"></div> 
+            <div id="copiescard" style="margin-left: 20px"></div>
+            <div id="authorscard" style="margin-left: 20px"></div>
+            <div id="userscard" style="margin-left: 20px"></div>
+        </div>
+        <h2>Users List</h2>
+        <div id="tablediv">
+
+        </div> <br>
+        <a type="button" class="btn btn-danger" href="../index.html">Logout</a>
     </div>
-    <h2>Users List</h2>
-    <div id="tablediv">
-
-    </div> <br>
-    <div id="display" style="display:none"> 
-
-    </div> <br>
-    <a href="../index.html">Logout</a>
+    <div class="modal fade" id="blank-modal" role="modal">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content">
+                <div class="modal-header text-white" style="background-color:#006400">
+                    <h5 class="modal-title" id="blank-modal-title">Modal Title</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="blank-modal-body">
+                    <div class="row" id="blank-main-div" style="padding:5px;"></div>
+                </div>
+                <div class="modal-footer" id="blank-modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm w-100" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

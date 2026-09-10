@@ -62,6 +62,7 @@ const getAllUsers = async() => {
         </tr>
     `;
     table.appendChild(thead);
+    table.classList.add("table", "table-hover", "table-striped", "table-sm");
     const tbody = document.createElement('tbody');
 
     const response = await axios.get(`${url}/users.php`,{
@@ -91,10 +92,10 @@ const getAllUsers = async() => {
                 <td>${user.department_name}</td>
                 <td>${status}</td>
                 <td>
-                    <button class="view">View</button>
-                    <button class="update">Update</button>
-                    <button class="deactivate">De-activate</button>
-                    <button class="reactivate">Re-activate</button>
+                    <button class="btn btn-secondary btn-sm view">View</button>
+                    <button class="btn btn-success btn-sm update">Update</button>
+                    <button class="btn btn-danger btn-sm deactivate">De-activate</button>
+                    <button class="btn btn-primary btn-sm reactivate">Re-activate</button>
                 </td>
             `;
             tbody.appendChild(row);
