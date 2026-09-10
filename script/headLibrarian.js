@@ -72,7 +72,10 @@ const getAllUsers = async() => {
     if(response.status == 200){
         console.log(response.data);
         document.getElementById('userscard').innerHTML = `
-            Total User Count <br> <span style="font-weight: 800">${response.data.length}</span>
+            <div class="card text-white shadow-sm p-3" style="background-color: #ff6600;">
+                <small class="text-uppercase fw-semibold">Total User Count</small>
+                <h2 class="display-6 fw-bold my-2 text-center">${response.data.length}</h2>
+            </div>
         `;
         response.data.forEach(user => { 
             let status;
@@ -129,7 +132,10 @@ const getAllBooks = async() => {
     if(response.status == 200){
         console.log(response.data);
         document.getElementById('bookscard').innerHTML = `
-            Total Books Quantity <br> <span style="font-weight: 800">${response.data.length}</span>
+            <div class="card text-white shadow-sm p-3" style="background-color: #006666;">
+                <small class="text-uppercase fw-semibold">Total Books Quantity</small>
+                <h2 class="display-6 fw-bold my-2 text-center">${response.data.length}</h2>
+            </div>
         `;
     }
 }
@@ -142,7 +148,10 @@ const getAllAuthors = async() => {
     if(response.status == 200){
         console.log(response.data);
         document.getElementById('authorscard').innerHTML = `
-            Total Authors Quantity <br> <span style="font-weight: 800">${response.data.length}</span>
+            <div class="card text-white shadow-sm p-3" style="background-color: #e68a00;">
+                <small class="text-uppercase fw-semibold">Total Authors Quantity</small>
+                <h2 class="display-6 fw-bold my-2 text-center">${response.data.length}</h2>
+            </div>
         `;
     }
 }
@@ -155,7 +164,10 @@ const getAllCopies = async() => {
     if(response.status == 200){
         console.log(response.data);
         document.getElementById('copiescard').innerHTML = `
-            Total Book Copies Quantity <br> <span style="font-weight: 800">${response.data.length}</span>
+            <div class="card text-white shadow-sm p-3" style="background-color: #00a8a8;">
+                <small class="text-uppercase fw-semibold">Total Book Copies Quantity</small>
+                <h2 class="display-6 fw-bold my-2 text-center">${response.data.length}</h2>
+            </div>
         `;
     }
 }
