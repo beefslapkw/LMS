@@ -1,26 +1,36 @@
 export const reactivateUser = async(user_id, refreshDisplay) => {
-    const displaydiv = document.getElementById('display');
+    const myModal = new bootstrap.Modal(document.getElementById("blank-modal"), {
+        keyboard: true,
+        backdrop: "static",
+    });
 
-    displaydiv.innerHTML = `
-        <p>Are you sure you want to reactivate this account?</p> <br>
-        <button id="yes">Yes</button>
-        <button id="no">No</button>
+    document.getElementById("blank-modal-title").innerText = "Confirm Action";
+
+    const myHtml = `
+        <p>Are you sure you want to reactivate this account?</p>
     `;
-    displaydiv.style.display = "block";
+    document.getElementById("blank-main-div").innerHTML = myHtml;
 
-    document.getElementById('yes').addEventListener('click', async() => {
-        if(await reactivateUserDetails(user_id) == 1){
-            alert("Successfully reactivated user");
-            displaydiv.style.display = "none";
+    const modalFooter = document.getElementById("blank-modal-footer");
+    modalFooter.innerHTML = `
+        <button type="button" class="btn btn-success btn-sm w-100 confirm-reactivate">Yes</button>
+        <button type="button" class="btn btn-secondary btn-sm w-100" data-bs-dismiss="modal">Cancel</button>
+    `;
+
+    modalFooter.querySelector(".confirm-reactivate").addEventListener('click', async() => {
+        const result = await reactivateUserDetails(user_id);
+
+        if(result == 1){
             refreshDisplay();
+            alert("Successfully reactivated user");
+            myModal.hide();
         }
         else{
-            alert("Failed to reactivate user");
+            alert(result);
         }
     })
-    document.getElementById('no').addEventListener('click', () => {
-        displaydiv.style.display = "none";
-    })
+
+    myModal.show();
 }
 
 const reactivateUserDetails = async(user_id) => {

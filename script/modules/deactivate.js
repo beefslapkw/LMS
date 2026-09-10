@@ -18,13 +18,15 @@ export const deactivateUser = async(user_id, refreshDisplay) => {
     `;
 
     modalFooter.querySelector(".confirm-deactivate").addEventListener('click', async() => {
-        if(await deactivateUserDetails(user_id) == 1){
+        const result = await deactivateUserDetails(user_id);
+
+        if(result == 1){
             refreshDisplay();
             alert("Successfully deactivated user");
             myModal.hide();
         }
         else{
-            alert("Failed to deactivate user");
+            alert(result);
         }
     })
 
