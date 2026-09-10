@@ -67,6 +67,10 @@ const getAllUsers = async() => {
     }
 }
 
+const getAllBooks = async() => {
+
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     getAllUsers();
 })

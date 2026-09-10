@@ -3,6 +3,9 @@
     header("Access-Control-Allow-Origin: *");
 
     function checkRoleId($idnum){
+        if(str_starts_with($idnum, 'H')){
+            return 1;
+        }
         if(str_starts_with($idnum, 'F')){
             return 4;
         }
