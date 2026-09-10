@@ -52,7 +52,7 @@ const register = async() => {
     }
 
     const formData = new FormData();
-    formData.append("operation", "register");
+    formData.append("operation", "addUser");
     formData.append("json", JSON.stringify(jsondata));
 
     const response = await axios({

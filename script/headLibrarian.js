@@ -1,12 +1,52 @@
 import { viewDetails } from "./modules/view.js";
+import { updateDetails } from "./modules/update.js";
+import { deactivateUser } from "./modules/deactivate.js";
+import { reactivateUser } from "./modules/reactivate.js";
 
 const url = "http://localhost/LMS/api";
 sessionStorage.setItem("url", url);
+let departments = [];
+let roles = [];
 
 document.getElementById('welcome').innerHTML = `Welcome Head Librarian ${sessionStorage.fullname}`;
 
+const getAllDepartments = async() => {
+    const response = await axios.get(`${url}/departments.php`,{
+        params:{operation:"getAllDepartments"}
+    })
+
+    if(response.status == 200){
+        console.log(response.data);
+        response.data.forEach(department => {
+            departments.push(department);
+        })
+    }
+    else{
+        alert("ERROR");
+    }
+}
+
+const getAllRoles = async() => {
+    const response = await axios.get(`${url}/roles.php`,{
+        params:{operation:"getAllRoles"}
+    })
+
+    if(response.status == 200){
+        console.log(response.data);
+        response.data.forEach(role => {
+            roles.push(role);
+        })
+    }
+    else{
+        alert("ERROR");
+    }
+}
+
 const getAllUsers = async() => {
     const tablediv = document.getElementById('tablediv');
+
+    tablediv.innerHTML = '';
+
     const table = document.createElement('table');
     const thead = document.createElement('thead');
     thead.innerHTML = `
@@ -30,7 +70,9 @@ const getAllUsers = async() => {
 
     if(response.status == 200){
         console.log(response.data);
-        document.getElementById('userscard').innerHTML = `Total User Count: ${response.data.length}`;
+        document.getElementById('userscard').innerHTML = `
+            Total User Count <br> <span style="font-weight: 800">${response.data.length}</span>
+        `;
         response.data.forEach(user => { 
             let status;
             if(user.is_active == 1){
@@ -52,12 +94,22 @@ const getAllUsers = async() => {
                     <button class="view">View</button>
                     <button class="update">Update</button>
                     <button class="deactivate">De-activate</button>
+                    <button class="reactivate">Re-activate</button>
                 </td>
             `;
             tbody.appendChild(row);
 
             row.querySelector(".view").addEventListener('click', () => {
                 viewDetails(user.user_id);
+            })
+            row.querySelector(".update").addEventListener('click', () => {
+                updateDetails(user.user_id, departments, roles, getAllUsers);
+            })
+            row.querySelector(".deactivate").addEventListener('click', () => {
+                deactivateUser(user.user_id, getAllUsers);
+            })
+            row.querySelector(".reactivate").addEventListener('click', () => {
+                reactivateUser(user.user_id, getAllUsers);
             })
         })
         table.appendChild(tbody);
@@ -75,7 +127,9 @@ const getAllBooks = async() => {
 
     if(response.status == 200){
         console.log(response.data);
-        document.getElementById('bookscard').innerHTML = `Total Books Quantity ${response.data.length}`;
+        document.getElementById('bookscard').innerHTML = `
+            Total Books Quantity <br> <span style="font-weight: 800">${response.data.length}</span>
+        `;
     }
 }
 
@@ -86,13 +140,30 @@ const getAllAuthors = async() => {
 
     if(response.status == 200){
         console.log(response.data);
-        document.getElementById('authorscard').innerHTML = `Total Authors Quantity ${response.data.length}`;
+        document.getElementById('authorscard').innerHTML = `
+            Total Authors Quantity <br> <span style="font-weight: 800">${response.data.length}</span>
+        `;
     }
 }
 
+const getAllCopies = async() => {
+    const response = await axios.get(`${url}/bookcopies.php`,{
+        params:{operation:"getAllCopies"}
+    })
+
+    if(response.status == 200){
+        console.log(response.data);
+        document.getElementById('copiescard').innerHTML = `
+            Total Book Copies Quantity <br> <span style="font-weight: 800">${response.data.length}</span>
+        `;
+    }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
+    getAllDepartments();
+    getAllRoles();
     getAllUsers();
     getAllBooks();
     getAllAuthors();
+    getAllCopies();
 })
