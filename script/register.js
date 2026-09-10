@@ -65,7 +65,7 @@ const register = async() => {
         alert("Successfully Registered");
     }
     else{
-        alert("ERROR");
+        alert(response.data);
     }
 }
 
