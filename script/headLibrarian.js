@@ -79,11 +79,14 @@ const getAllUsers = async() => {
         `;
         response.data.forEach(user => { 
             let status;
+            let statusButtons;
             if(user.is_active == 1){
                 status = "Active";
+                statusButtons = `<button class="btn btn-danger btn-sm deactivate">De-activate</button>`;
             }
             else if(user.is_active == 0){
                 status = "Inactive";
+                statusButtons = `<button class="btn btn-primary btn-sm reactivate">Re-activate</button>`;
             }
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -97,8 +100,7 @@ const getAllUsers = async() => {
                 <td>
                     <button class="btn btn-secondary btn-sm view">View</button>
                     <button class="btn btn-success btn-sm update">Update</button>
-                    <button class="btn btn-danger btn-sm deactivate">De-activate</button>
-                    <button class="btn btn-primary btn-sm reactivate">Re-activate</button>
+                    ${statusButtons}
                 </td>
             `;
             tbody.appendChild(row);
@@ -109,12 +111,20 @@ const getAllUsers = async() => {
             row.querySelector(".update").addEventListener('click', () => {
                 updateDetails(user.user_id, departments, roles, getAllUsers);
             })
-            row.querySelector(".deactivate").addEventListener('click', () => {
-                deactivateUser(user.user_id, getAllUsers);
-            })
-            row.querySelector(".reactivate").addEventListener('click', () => {
-                reactivateUser(user.user_id, getAllUsers);
-            })
+
+            const deactivateBtn = row.querySelector(".deactivate");
+            if(deactivateBtn){
+                deactivateBtn.addEventListener('click', () => {
+                    deactivateUser(user.user_id, getAllUsers);
+                })
+            }
+
+            const reactivateBtn = row.querySelector(".reactivate");
+            if(reactivateBtn){
+                reactivateBtn.addEventListener('click', () => {
+                    reactivateUser(user.user_id, getAllUsers);
+                })
+            }
         })
         table.appendChild(tbody);
         tablediv.appendChild(table);
@@ -138,6 +148,9 @@ const getAllBooks = async() => {
             </div>
         `;
     }
+    else{
+        alert("ERROR");
+    }
 }
 
 const getAllAuthors = async() => {
@@ -154,6 +167,9 @@ const getAllAuthors = async() => {
             </div>
         `;
     }
+    else{
+        alert("ERROR");
+    }
 }
 
 const getAllCopies = async() => {
@@ -169,6 +185,9 @@ const getAllCopies = async() => {
                 <h2 class="display-6 fw-bold my-2 text-center">${response.data.length}</h2>
             </div>
         `;
+    }
+    else{
+        alert("ERROR");
     }
 }
 

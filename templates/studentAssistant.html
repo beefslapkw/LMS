@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Assistant Interface</title>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script type="module" src="../script/studentAssistant.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 </head>
@@ -17,9 +18,86 @@
             </div>
             <a type="button" class="btn btn-outline-danger btn-sm px-3" href="../index.html">Logout</a>
         </div>
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-md-3" id="bookscard"></div>
+            <div class="col-12 col-md-3" id="copiescard"></div>
+            <div class="col-12 col-md-3" id="authorscard"></div>
+            <div class="col-12 col-md-3" id="publisherscard"></div>
+        </div>
+
+        <ul class="nav nav-tabs mb-3">
+            <li class="nav-item">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#books-tab" type="button">Books</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#copies-tab" type="button">Book Copies</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#authors-tab" type="button">Authors</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#publishers-tab" type="button">Publishers</button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="books-tab">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h2>Books List</h2>
+                    <button type="button" class="btn btn-success btn-sm" id="addbook">+ Add Book</button>
+                </div>
+                <div id="bookstablediv">
+
+                </div> <br>
+            </div>
+
+            <div class="tab-pane fade" id="copies-tab">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h2>Book Copies List</h2>
+                    <button type="button" class="btn btn-success btn-sm" id="addcopy">+ Add Copy</button>
+                </div>
+                <div id="copiestablediv">
+
+                </div> <br>
+            </div>
+
+            <div class="tab-pane fade" id="authors-tab">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h2>Authors List</h2>
+                    <button type="button" class="btn btn-success btn-sm" id="addauthor">+ Add Author</button>
+                </div>
+                <div id="authorstablediv">
+
+                </div> <br>
+            </div>
+
+            <div class="tab-pane fade" id="publishers-tab">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h2>Publishers List</h2>
+                    <button type="button" class="btn btn-success btn-sm" id="addpublisher">+ Add Publisher</button>
+                </div>
+                <div id="publisherstablediv">
+                    
+                </div> <br>
+            </div>
+        </div>
     </div>
-    <script>
-        document.getElementById('welcome').innerHTML = `Welcome Student Assistant ${sessionStorage.fullname}`;
-    </script>
+
+    <div class="modal fade" id="blank-modal" role="modal">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content">
+                <div class="modal-header text-white" style="background-color:#006400">
+                    <h5 class="modal-title" id="blank-modal-title">Modal Title</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="blank-modal-body">
+                    <div class="row" id="blank-main-div" style="padding:5px;"></div>
+                </div>
+                <div class="modal-footer" id="blank-modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm w-100" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
