@@ -1,5 +1,12 @@
+import { viewDetails } from "./bookmodules/view.js";
+import { updateDetails } from "./bookmodules/update.js";
+import { deactivateUser } from "./bookmodules/deactivate.js";
+import { reactivateUser } from "./bookmodules/reactivate.js";
+
 const url = "http://localhost/LMS/api";
 sessionStorage.setItem("url", url);
+let genres = [];
+let categories = [];
 
 document.getElementById('welcome').innerHTML = `Welcome Student Assistant ${sessionStorage.fullname}`;
 
@@ -66,6 +73,27 @@ const getAllBooks = async() => {
                 </td>
             `;
             tbody.appendChild(row);
+
+            row.querySelector(".view").addEventListener('click', () => {
+                viewDetails(book.book_id);
+            })
+            row.querySelector(".update").addEventListener('click', () => {
+                updateDetails(book.book_id, departments, roles, getAllUsers);
+            })
+            
+            const deactivateBtn = row.querySelector(".deactivate");
+            if(deactivateBtn){
+                deactivateBtn.addEventListener('click', () => {
+                    deactivateUser(user.user_id, getAllUsers);
+                })
+            }
+            
+            const reactivateBtn = row.querySelector(".reactivate");
+            if(reactivateBtn){
+                reactivateBtn.addEventListener('click', () => {
+                    reactivateUser(user.user_id, getAllUsers);
+                })
+            }
         })
         table.appendChild(tbody);
         bookstablediv.appendChild(table);

@@ -23,12 +23,80 @@
             <div class="col-12 col-md-3" id="copiescard"></div>
             <div class="col-12 col-md-3" id="authorscard"></div>
             <div class="col-12 col-md-3" id="userscard"></div>
-        </div>
-        <h2>Users List</h2>
-        <div id="tablediv">
+        </div>    
 
-        </div> <br>
+
+        <ul class="nav nav-tabs mb-3">
+            <li class="nav-item">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#users-tab" type="button">Users</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#books-tab" type="button">Books</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#copies-tab" type="button">Book Copies</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#authors-tab" type="button">Authors</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#publishers-tab" type="button">Publishers</button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="users-tab">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h2>Users List</h2>
+                    <button type="button" class="btn btn-success btn-sm" id="adduser">+ Add User</button>
+                </div>
+                <div id="userstablediv">
+
+                </div> <br>
+            </div>
+
+            <div class="tab-pane fade show active" id="books-tab">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h2>Books List</h2>
+                    <button type="button" class="btn btn-success btn-sm" id="addbook">+ Add Book</button>
+                </div>
+                <div id="bookstablediv">
+
+                </div> <br>
+            </div>
+
+            <div class="tab-pane fade" id="copies-tab">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h2>Book Copies List</h2>
+                    <button type="button" class="btn btn-success btn-sm" id="addcopy">+ Add Copy</button>
+                </div>
+                <div id="copiestablediv">
+
+                </div> <br>
+            </div>
+
+            <div class="tab-pane fade" id="authors-tab">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h2>Authors List</h2>
+                    <button type="button" class="btn btn-success btn-sm" id="addauthor">+ Add Author</button>
+                </div>
+                <div id="authorstablediv">
+
+                </div> <br>
+            </div>
+
+            <div class="tab-pane fade" id="publishers-tab">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h2>Publishers List</h2>
+                    <button type="button" class="btn btn-success btn-sm" id="addpublisher">+ Add Publisher</button>
+                </div>
+                <div id="publisherstablediv">
+                    
+                </div> <br>
+            </div>
+        </div>
     </div>
+
     <div class="modal fade" id="blank-modal" role="modal">
         <div class="modal-dialog modal-dialog-centered modal-md">
             <div class="modal-content">

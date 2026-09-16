@@ -1,7 +1,7 @@
-import { viewDetails } from "./modules/view.js";
-import { updateDetails } from "./modules/update.js";
-import { deactivateUser } from "./modules/deactivate.js";
-import { reactivateUser } from "./modules/reactivate.js";
+import { viewDetails } from "./usermodules/view.js";
+import { updateDetails } from "./usermodules/update.js";
+import { deactivateUser } from "./usermodules/deactivate.js";
+import { reactivateUser } from "./usermodules/reactivate.js";
 
 const url = "http://localhost/LMS/api";
 sessionStorage.setItem("url", url);
@@ -43,7 +43,7 @@ const getAllRoles = async() => {
 }
 
 const getAllUsers = async() => {
-    const tablediv = document.getElementById('tablediv');
+    const tablediv = document.getElementById('userstablediv');
 
     tablediv.innerHTML = '';
 
