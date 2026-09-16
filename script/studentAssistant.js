@@ -249,9 +249,44 @@ const getAllPublishers = async() => {
     }
 }
 
+const getAllGenres = async() => {
+    const response = await axios.get(`${url}/genres.php`,{
+        params:{operation:"getAllGenres"}
+    })
+
+    if(response.status == 200){
+        console.log(response.data);
+        response.data.forEach(genre => {
+            genres.push(genre);
+        })
+    }
+    else{
+        alert("ERROR");
+    }
+}
+
+const getAllCategories = async() => {
+    const response = await axios.get(`${url}/categories.php`,{
+        params:{operation:"getAllCategories"}
+    })
+
+    if(response.status == 200){
+        console.log(response.data);
+        response.data.forEach(category => {
+            categories.push(category);
+        })
+    }
+    else{
+        alert("ERROR");
+    }
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
     getAllBooks();
     getAllCopies();
     getAllAuthors();
     getAllPublishers();
+    getAllGenres();
+    getAllCategories();
 })
