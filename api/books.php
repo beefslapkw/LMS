@@ -25,6 +25,30 @@
 
             return json_encode($rs);
         }
+        function addBook($json){
+            include "connection.php";
+
+            $json = json_decode($json, true);
+
+            $sql = "INSERT INTO books(category_id, genre_id, book_title, publisher_id, shelf_location, added_by, added_at)
+                    VALUES(:category_id, :genre_id, :book_title, :publisher_id, :shelf_location, :added_by, :added_at)";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindParam(":category_id", $json['category_id']);
+            $stmt->bindParam(":genre_id", $json['genre_id']);
+            $stmt->bindParam(":book_title", $json['book_title']);
+            $stmt->bindParam(":publisher_id", $json['publisher_id']);
+            $stmt->bindParam(":shelf_location", $json['shelf_location']);
+            $stmt->bindParam(":added_by", $json['added_by']);
+            $stmt->bindParam(":added_at", $json['added_at']);
+            $stmt->execute();
+            
+            $returnValue = 0;
+            if($stmt->rowCount() > 0){
+                $returnValue = 1;
+            }
+
+            return json_encode($returnValue);
+        }
     }
 
     if($_SERVER['REQUEST_METHOD'] == 'GET'){
