@@ -2,6 +2,8 @@ import { viewBookDetails } from "./bookmodules/view.js";
 // import { updateDetails } from "./bookmodules/update.js";
 // import { deactivateUser } from "./bookmodules/deactivate.js";
 // import { reactivateUser } from "./bookmodules/reactivate.js";
+import { viewCopy } from "./bookcopymodules/view.js";
+import { addCopy } from "./bookcopymodules/add.js";
 
 const url = "http://localhost/LMS/api";
 sessionStorage.setItem("url", url);
@@ -106,6 +108,7 @@ const getAllBooks = async() => {
             <th>Added By</th>
             <th>Added At</th>
             <th>Status</th>
+            <th>Actions</th>
         </tr>
     `;
     table.appendChild(thead);
@@ -186,6 +189,8 @@ const getAllCopies = async() => {
         params:{operation:"getAllCopies"}
     })
 
+    copiestablediv.innerHTML = '';
+
     const table = document.createElement('table');
     const thead = document.createElement('thead');
     thead.innerHTML = `
@@ -197,6 +202,7 @@ const getAllCopies = async() => {
             <th>Added By</th>
             <th>Added At</th>
             <th>Status</th>
+            <th>Actions</th>
         </tr>
     `;
     table.appendChild(thead);
@@ -228,8 +234,16 @@ const getAllCopies = async() => {
                 <td>${copy.first_name + " " + copy.last_name}</td>
                 <td>${copy.added_at}</td>
                 <td>${copy.status_desc}</td>
+                <td>
+                    <button class="btn btn-secondary btn-sm view">View</button>
+                    <button class="btn btn-success btn-sm update">Update</button>
+                </td>
             `;
             tbody.appendChild(row);
+
+            row.querySelector(".view").addEventListener('click', () => {
+                viewCopy(copy.copy_id);
+            })
         })
         table.appendChild(tbody);
         copiestablediv.appendChild(table);
@@ -481,5 +495,8 @@ document.addEventListener('DOMContentLoaded', () => {
     getAllCategories();
     document.getElementById('addbook').addEventListener('click', () => {
         addBook();
+    })
+    document.getElementById('addcopy').addEventListener('click', () => {
+        addCopy(getAllCopies);
     })
 })
