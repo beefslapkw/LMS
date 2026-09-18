@@ -3,6 +3,8 @@ import { updateDetails } from "./usermodules/update.js";
 import { deactivateUser } from "./usermodules/deactivate.js";
 import { reactivateUser } from "./usermodules/reactivate.js";
 
+import { viewBookDetails } from "./bookmodules/view.js";
+
 const url = "http://localhost/LMS/api";
 sessionStorage.setItem("url", url);
 let departments = [];
@@ -201,7 +203,7 @@ const getAllBooks = async() => {
             tbody.appendChild(row);
 
             row.querySelector(".view").addEventListener('click', () => {
-                viewDetails(book.book_id);
+                viewBookDetails(book.book_id);
             })
             row.querySelector(".update").addEventListener('click', () => {
                 updateDetails(book.book_id, departments, roles, getAllUsers);

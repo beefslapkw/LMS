@@ -1,56 +1,56 @@
-export const viewDetails = async(user_id) => {
+export const viewBookDetails = async(book_id) => {
     document.getElementById("blank-modal-title").innerText = "View Details";
 
-    const user = await getUser(user_id);
+    const book = await getBook(book_id);
 
     const myHtml = `
         <table class="table table-sm">
             <tr>
-                <td>Role</td>
+                <td>Book Title</td>
                 <td>
-                    ${user.role_type}
+                    ${book.book_title}
                 </td>
             </tr>
             <tr>
-                <td>ID Number</td>  
+                <td>Genre</td>  
                 <td>
-                    ${user.id_number}
+                    ${book.genre_name}
                 <td>
             </tr>
             <tr>   
-                <td>Last Name</td>
+                <td>Authors</td>
                 <td>
-                    ${user.last_name}
+                    ${book.authors}
                 </td>
             </tr>
             <tr>
-                <td>First Name</td>
+                <td>Category</td>
                 <td>
-                    ${user.first_name}
+                    ${book.category_type}
                 </td>
             </tr>
             <tr>
-                <td>Contact Number</td>
+                <td>Shelf Location</td>
                 <td>
-                    ${user.contact_number}
+                    ${book.shelf_location}
                 </td>
             </tr>      
             <tr>
-                <td>Email Address</td>
+                <td>Publisher</td>
                 <td>
-                    ${user.email_address}
+                    ${book.publisher_name}
                 </td>
             </tr>
             <tr>
-                <td>Username</td>
+                <td>Added By</td>
                 <td>
-                    ${user.username}
+                    ${book.first_name + " " + book.last_name}
                 </td>
             </tr>
             <tr>
-                <td>Department</td>
+                <td>Added At</td>
                 <td>
-                    ${user.department_name}
+                    ${book.added_at}
                 </td>
             </tr> 
         </table>
@@ -70,13 +70,13 @@ export const viewDetails = async(user_id) => {
     myModal.show();
 }
 
-const getUser = async(user_id) => {
+const getBook = async(book_id) => {
     const params = {
-        operation: "getUser",
-        json: JSON.stringify({user_id: user_id})
+        operation: "getBook",
+        json: JSON.stringify({book_id: book_id})
     }
 
-    const response = await axios.get(`${sessionStorage.url}/users.php`,{
+    const response = await axios.get(`${sessionStorage.url}/books.php`,{
         params: params
     })
 
