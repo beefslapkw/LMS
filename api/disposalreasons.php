@@ -1,26 +1,26 @@
-<?php
+<?php 
     header('Content-Type: application/json');
     header("Access-Control-Allow-Origin: *");
 
-    class Category{
-        function getAllCategories(){
+    class DisposalReason{
+        function getAllDisposalReasons(){
             include "connection.php";
 
-            $sql = "SELECT * FROM categories";
+            $sql = "SELECT * FROM disposal_reasons";
             $stmt = $conn->prepare($sql);
             $stmt->execute();
             $rs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             return json_encode($rs);
         }
-        function addCategory($json){
+        function addDisposalReason($json){
             include "connection.php";
 
             $json = json_decode($json, true);
 
-            $sql = "INSERT INTO categories(category_name) VALUES(:category_name)";
+            $sql = "INSERT INTO disposal_reasons(reason_desc) VALUES(:reason_desc)";
             $stmt = $conn->prepare($sql);
-            $stmt->bindParam(":category_name", $json['category_name']);
+            $stmt->bindParam(":reason_desc", $json['reason_desc']);
             $stmt->execute();
             $returnValue = 0;
 
@@ -29,30 +29,30 @@
             }
             return json_encode($returnValue);
         }
-        function getCategory($json){
+        function getDisposalReason($json){
             include "connection.php";
 
             $json = json_decode($json, true);
 
-            $sql = "SELECT * FROM categories
-            WHERE category_id=:category_id";
+            $sql = "SELECT * FROM disposal_reasons
+            WHERE reason_id=:reason_id";
             $stmt = $conn->prepare($sql);
-            $stmt->bindParam(":category_id", $json['category_id']);
+            $stmt->bindParam(":reason_id", $json['reason_id']);
             $stmt->execute();
             $rs = $stmt->fetch(PDO::FETCH_ASSOC);
 
             return json_encode($rs);
         }
-        function updateCategory($json){
+        function updateDisposalReason($json){
             include "connection.php";
 
             $json = json_decode($json, true);
 
-            $sql = "UPDATE categories SET category_name=:category_name 
-            WHERE category_id=:category_id";
+            $sql = "UPDATE disposal_reasons SET reason_desc=:reason_desc 
+            WHERE reason_id=:reason_id";
             $stmt = $conn->prepare($sql);
-            $stmt->bindParam(":category_id", $json['category_id']);
-            $stmt->bindParam(":category_name", $json['category_name']);
+            $stmt->bindParam(":reason_id", $json['reason_id']);
+            $stmt->bindParam(":reason_desc", $json['reason_desc']);
             $stmt->execute();
             $returnValue = 0;
 
@@ -61,15 +61,15 @@
             }
             return json_encode($returnValue);
         }
-        function deleteCategory($json){
+        function deleteDisposalReason($json){
             include "connection.php";
 
             $json = json_decode($json, true);
 
-            $sql = "DELETE FROM categories
-            WHERE category_id=:category_id";
+            $sql = "DELETE FROM disposal_reasons
+            WHERE reason_id=:reason_id";
             $stmt = $conn->prepare($sql);
-            $stmt->bindParam(":category_id", $json['category_id']);
+            $stmt->bindParam(":reason_id", $json['reason_id']);
             $stmt->execute();
             $returnValue = 0;
 
@@ -89,22 +89,22 @@
         $json = isset($_POST['json']) ? $_POST['json'] : "";
     }
 
-    $category = new Category();
+    $disposalReason = new DisposalReason();
     switch($operation){
-        case "getAllCategories":
-            echo $category->getAllCategories();
+        case "getAllDisposalReasons":
+            echo $disposalReason->getAllDisposalReasons();
             break;
-        case "addCategory":
-            echo $category->addCategory($json);
+        case "addDisposalReason":
+            echo $disposalReason->addDisposalReason($json);
             break;
-        case "getCategory":
-            echo $category->getCategory($json);
+        case "getDisposalReason":
+            echo $disposalReason->getDisposalReason($json);
             break;
-        case "updateCategory":
-            echo $category->updateCategory($json);
+        case "updateDisposalReason":
+            echo $disposalReason->updateDisposalReason($json);
             break;
-        case "deleteCategory":
-            echo $category->deleteCategory($json);
+        case "deleteDisposalReason":
+            echo $disposalReason->deleteDisposalReason($json);
             break;
     }
 ?>

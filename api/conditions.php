@@ -1,26 +1,26 @@
-<?php
+<?php 
     header('Content-Type: application/json');
     header("Access-Control-Allow-Origin: *");
 
-    class Category{
-        function getAllCategories(){
+    class Condition{
+        function getAllConditions(){
             include "connection.php";
 
-            $sql = "SELECT * FROM categories";
+            $sql = "SELECT * FROM conditions";
             $stmt = $conn->prepare($sql);
             $stmt->execute();
             $rs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             return json_encode($rs);
         }
-        function addCategory($json){
+        function addCondition($json){
             include "connection.php";
 
             $json = json_decode($json, true);
 
-            $sql = "INSERT INTO categories(category_name) VALUES(:category_name)";
+            $sql = "INSERT INTO conditions(condition_desc) VALUES(:condition_desc)";
             $stmt = $conn->prepare($sql);
-            $stmt->bindParam(":category_name", $json['category_name']);
+            $stmt->bindParam(":condition_desc", $json['condition_desc']);
             $stmt->execute();
             $returnValue = 0;
 
@@ -29,30 +29,30 @@
             }
             return json_encode($returnValue);
         }
-        function getCategory($json){
+        function getCondition($json){
             include "connection.php";
 
             $json = json_decode($json, true);
 
-            $sql = "SELECT * FROM categories
-            WHERE category_id=:category_id";
+            $sql = "SELECT * FROM conditions
+            WHERE condition_id=:condition_id";
             $stmt = $conn->prepare($sql);
-            $stmt->bindParam(":category_id", $json['category_id']);
+            $stmt->bindParam(":condition_id", $json['condition_id']);
             $stmt->execute();
             $rs = $stmt->fetch(PDO::FETCH_ASSOC);
 
             return json_encode($rs);
         }
-        function updateCategory($json){
+        function updateCondition($json){
             include "connection.php";
 
             $json = json_decode($json, true);
 
-            $sql = "UPDATE categories SET category_name=:category_name 
-            WHERE category_id=:category_id";
+            $sql = "UPDATE conditions SET condition_desc=:condition_desc 
+            WHERE condition_id=:condition_id";
             $stmt = $conn->prepare($sql);
-            $stmt->bindParam(":category_id", $json['category_id']);
-            $stmt->bindParam(":category_name", $json['category_name']);
+            $stmt->bindParam(":condition_id", $json['condition_id']);
+            $stmt->bindParam(":condition_desc", $json['condition_desc']);
             $stmt->execute();
             $returnValue = 0;
 
@@ -61,15 +61,15 @@
             }
             return json_encode($returnValue);
         }
-        function deleteCategory($json){
+        function deleteCondition($json){
             include "connection.php";
 
             $json = json_decode($json, true);
 
-            $sql = "DELETE FROM categories
-            WHERE category_id=:category_id";
+            $sql = "DELETE FROM conditions
+            WHERE condition_id=:condition_id";
             $stmt = $conn->prepare($sql);
-            $stmt->bindParam(":category_id", $json['category_id']);
+            $stmt->bindParam(":condition_id", $json['condition_id']);
             $stmt->execute();
             $returnValue = 0;
 
@@ -89,22 +89,22 @@
         $json = isset($_POST['json']) ? $_POST['json'] : "";
     }
 
-    $category = new Category();
+    $condition = new Condition();
     switch($operation){
-        case "getAllCategories":
-            echo $category->getAllCategories();
+        case "getAllConditions":
+            echo $condition->getAllConditions();
             break;
-        case "addCategory":
-            echo $category->addCategory($json);
+        case "addCondition":
+            echo $condition->addCondition($json);
             break;
-        case "getCategory":
-            echo $category->getCategory($json);
+        case "getCondition":
+            echo $condition->getCondition($json);
             break;
-        case "updateCategory":
-            echo $category->updateCategory($json);
+        case "updateCondition":
+            echo $condition->updateCondition($json);
             break;
-        case "deleteCategory":
-            echo $category->deleteCategory($json);
+        case "deleteCondition":
+            echo $condition->deleteCondition($json);
             break;
     }
 ?>
