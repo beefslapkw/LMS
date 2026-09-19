@@ -88,6 +88,28 @@
 
             return json_encode($rs);
         }
+        function getUserByIdNumber($json){
+            include "connection.php";
+
+            $json = json_decode($json, true);
+
+            $sql = "SELECT u.user_id, u.role_id, u.id_number, u.last_name, u.first_name, u.contact_number,
+                        u.email_address, u.username, u.department_id,
+                        r.role_type, d.department_name, u.is_active,
+                        (SELECT COUNT(*) FROM borrow_items bi
+                            INNER JOIN borrow_transactions bt ON bi.transaction_id = bt.transaction_id
+                            WHERE bt.borrower_id = u.user_id AND bi.is_returned = 0) AS active_borrow_count
+                    FROM users u
+                    INNER JOIN roles r ON u.role_id=r.role_id
+                    LEFT JOIN departments d ON u.department_id=d.department_id
+                    WHERE u.id_number=:id_number";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindParam(":id_number", $json['id_number']);
+            $stmt->execute();
+            $rs = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return json_encode($rs);
+        }
         function updateUser($json){
             include "connection.php";
 
@@ -229,6 +251,9 @@
             break;
         case "getUser":
             echo $user->getUser($json);
+            break;
+        case "getUserByIdNumber":
+            echo $user->getUserByIdNumber($json);
             break;
         case "updateUser":
             echo $user->updateUser($json);

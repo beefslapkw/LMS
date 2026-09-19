@@ -608,6 +608,8 @@ const getAllPublishers = async() => {
         params:{operation:"getAllPublishers"}
     })
 
+    publisherstablediv.innerHTML = '';
+
     const table = document.createElement('table');
     const thead = document.createElement('thead');
     thead.innerHTML = `
@@ -627,7 +629,7 @@ const getAllPublishers = async() => {
             row.innerHTML = `
                 <td>${publisher.publisher_id}</td>
                 <td>${publisher.publisher_name}</td>
-                 <td>
+                <td>
                     <button class="btn btn-secondary btn-sm view">View</button>
                     <button class="btn btn-success btn-sm update">Update</button>
                 </td>

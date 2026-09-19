@@ -20,7 +20,7 @@ export const addDisposalReason = async(refreshDisplay) => {
 
     const modalFooter = document.getElementById("blank-modal-footer");
     myHtml = `
-        <button type="button" class="btn btn-primary btn-sm w-100 add">Add DisposalReason</button>
+        <button type="button" class="btn btn-primary btn-sm w-100 add">Add Disposal Reason</button>
         <button type="button" class="btn btn-secondary btn-sm w-100" data-bs-dismiss="modal">Close</button>
     `;
     modalFooter.innerHTML = myHtml;

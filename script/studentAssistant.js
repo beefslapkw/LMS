@@ -1,11 +1,9 @@
+import { startBorrow } from "./borrowtransactionmodules/borrow.js";
 import { addBook } from "./bookmodules/add.js";
 import { viewBook } from "./bookmodules/view.js";
 import { updateBook } from "./bookmodules/update.js";
 import { deactivateBook } from "./bookmodules/deactivate.js";
 import { reactivateBook } from "./bookmodules/reactivate.js";
-// import { updateDetails } from "./bookmodules/update.js";
-// import { deactivateUser } from "./bookmodules/deactivate.js";
-// import { reactivateUser } from "./bookmodules/reactivate.js";
 import { addCopy } from "./bookcopymodules/add.js";
 import { viewCopy } from "./bookcopymodules/view.js";
 import { updateCopy } from "./bookcopymodules/update.js";
@@ -15,6 +13,7 @@ const url = "http://localhost/LMS/api";
 sessionStorage.setItem("url", url);
 let genres = [];
 let categories = [];
+let copies = [];
 let authors = [];
 let publishers = [];
 let conditions = [];
@@ -154,6 +153,7 @@ const getAllCopies = async() => {
             </div>
         `;
         response.data.forEach(copy => { 
+            copies.push(copy);
             let condition;
             if(!copy.condition_notes){
                 condition = "N/A";
@@ -348,6 +348,70 @@ const getAllDisposalReasons = async() => {
     }
 }
 
+const getAllBorrows = async() => {
+    const borrowstablediv = document.getElementById('borrowstablediv');
+
+    const response = await axios.get(`${url}/borrowtransactions.php`,{
+        params:{operation:"getAllBorrowTransactions"}
+    })
+
+    borrowstablediv.innerHTML = '';
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+        <tr>
+            <th>Accession Number</th>
+            <th>Book Title</th>
+            <th>Borrower</th>
+            <th>Borrowed At</th>
+            <th>Due Date</th>
+            <th>Processed By</th>
+            <th>Status</th>
+        </tr>
+    `;
+    table.appendChild(thead);
+    table.classList.add("table", "table-hover", "table-striped", "table-sm");
+    const tbody = document.createElement('tbody');
+
+    if(response.status == 200){
+        console.log(response.data);
+        response.data.forEach(transaction => { 
+            let status;
+            if(transaction.is_returned == 1){
+                status = "Returned";
+            }
+            else{
+                const now = new Date();
+                const dueDate = new Date(transaction.expires_at);
+
+                if(now > dueDate){
+                    status = "Overdue";
+                }
+                else{
+                    status = "Active";
+                }
+            }
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${transaction.accession_number}</td>
+                <td>${transaction.book_title}</td>
+                <td>${transaction.borrower_first_name + " " + transaction.borrower_last_name}</td>
+                <td>${transaction.borrowed_at}</td>
+                <td>${transaction.expires_at}</td>
+                <td>${transaction.processed_by_first_name + " " + transaction.processed_by_last_name}</td>
+                <td>${status}</td>
+            `;
+            tbody.appendChild(row);
+        })
+        table.appendChild(tbody);
+        borrowstablediv.appendChild(table);
+    }
+    else{
+        alert("ERROR");
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     getAllBooks();
     getAllCopies();
@@ -357,6 +421,10 @@ document.addEventListener('DOMContentLoaded', () => {
     getAllCategories();
     getAllConditions();
     getAllDisposalReasons();
+    getAllBorrows();
+    document.getElementById('startborrow').addEventListener('click', () => {
+        startBorrow(copies, getAllBorrows);
+    })
     document.getElementById('addbook').addEventListener('click', () => {
         addBook(authors, categories, genres, publishers, getAllBooks);
     })
