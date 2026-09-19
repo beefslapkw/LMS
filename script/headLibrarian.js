@@ -5,6 +5,8 @@ import { reactivateUser } from "./usermodules/reactivate.js";
 
 import { viewBookDetails } from "./bookmodules/view.js";
 
+import { addCategory } from "./categorymodules/add.js";
+
 const url = "http://localhost/LMS/api";
 sessionStorage.setItem("url", url);
 let departments = [];
@@ -388,15 +390,36 @@ const getAllGenres = async() => {
 }
 
 const getAllCategories = async() => {
+    const categoriestablediv = document.getElementById('categoriestablediv');
+
     const response = await axios.get(`${url}/categories.php`,{
         params:{operation:"getAllCategories"}
     })
+
+    categoriestablediv.innerHTML = '';
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+    <tr>
+        <th>Category Type</th>
+    </tr>
+    `;
+    table.appendChild(thead);
+    table.classList.add("table", "table-hover", "table-striped", "table-sm");
+    const tbody = document.createElement('tbody');
 
     if(response.status == 200){
         console.log(response.data);
         response.data.forEach(category => {
             categories.push(category);
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>${category.category_type}</td>`;
+
+            tbody.appendChild(row);
         })
+        table.appendChild(tbody);
+        categoriestablediv.appendChild(table);
     }
     else{
         alert("ERROR");
@@ -413,4 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
     getAllPublishers();
     getAllGenres();
     getAllCategories();
+    document.getElementById('addcategory').addEventListener('click', () => {
+        addCategory(getAllCategories);
+    })
 })
