@@ -18,6 +18,77 @@
             </div>
             <a type="button" class="btn btn-outline-danger btn-sm px-3" href="../index.html">Logout</a>
         </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-md-4">
+                <div class="card text-white shadow-sm p-3" style="background-color: #006400;">
+                    <small class="text-uppercase fw-semibold">Currently Borrowed</small>
+                    <h2 class="display-6 fw-bold my-2 text-center" id="borrowedcount">-</h2>
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
+                <div class="card text-white shadow-sm p-3" style="background-color: #cc0000;">
+                    <small class="text-uppercase fw-semibold">Outstanding Fines</small>
+                    <h2 class="display-6 fw-bold my-2 text-center" id="finecount">-</h2>
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
+                <div class="card text-white shadow-sm p-3" style="background-color: #006666;">
+                    <small class="text-uppercase fw-semibold">Books Available</small>
+                    <h2 class="display-6 fw-bold my-2 text-center" id="availablecount">-</h2>
+                </div>
+            </div>
+        </div>
+
+        <ul class="nav nav-tabs mb-3">
+            <li class="nav-item">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#catalog-tab" type="button">Book Catalog</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#borrowed-tab" type="button">My Borrowed Books</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#fines-tab" type="button">My Fines</button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+
+            <div class="tab-pane fade show active" id="catalog-tab">
+                <div class="mb-3">
+                    <input type="text" id="searchbar" class="form-control" placeholder="Search by title, author, or genre...">
+                </div>
+                <div id="catalogtablediv"></div> <br>
+            </div>
+
+            <div class="tab-pane fade" id="borrowed-tab">
+                <h2>My Borrowed Books</h2>
+                <div id="borrowedtablediv"></div> <br>
+            </div>
+
+            <div class="tab-pane fade" id="fines-tab">
+                <h2>My Fines</h2>
+                <div id="finestablediv"></div> <br>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="modal fade" id="blank-modal" role="modal">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content">
+                <div class="modal-header text-white" style="background-color:#006400">
+                    <h5 class="modal-title" id="blank-modal-title">Modal Title</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="blank-modal-body">
+                    <div class="row" id="blank-main-div" style="padding:5px;"></div>
+                </div>
+                <div class="modal-footer" id="blank-modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm w-100" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
 </body>
 </html>
