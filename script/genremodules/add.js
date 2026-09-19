@@ -1,17 +1,17 @@
-export const addPublisher = async(refreshDisplay) => {
+export const addGenre = async(refreshDisplay) => {
     const myModal = new bootstrap.Modal(document.getElementById("blank-modal"), {
         keyboard: true,
         backdrop: "static",
     });
 
-    document.getElementById("blank-modal-title").innerText = "Add Copy Details";
+    document.getElementById("blank-modal-title").innerText = "Add Genre";
 
     let myHtml = `
         <table class="table table-sm">
             <tr>
-                <td>Publisher Name</td>
+                <td>Genre Name</td>
                 <td>
-                    <input type="text" id="publisher_name" class="form-control" placeholder="ex: National Bookstore">
+                    <input type="text" id="genre_name" class="form-control" placeholder="ex: Mystery">
                 </td>
             </tr>
         </table>
@@ -20,36 +20,36 @@ export const addPublisher = async(refreshDisplay) => {
 
     const modalFooter = document.getElementById("blank-modal-footer");
     myHtml = `
-        <button type="button" class="btn btn-primary btn-sm w-100 add">Add Publisher</button>
+        <button type="button" class="btn btn-primary btn-sm w-100 add">Add Genre</button>
         <button type="button" class="btn btn-secondary btn-sm w-100" data-bs-dismiss="modal">Close</button>
     `;
     modalFooter.innerHTML = myHtml;
 
     modalFooter.querySelector(".add").addEventListener('click', async() => {
-        if(await addPublisherDetails() == 1){
+        if(await addGenreDetails() == 1){
             refreshDisplay();
-            alert("Successfully added publisher");
+            alert("Successfully added genre");
             myModal.hide();
         }
         else{
-            alert("Failed to add publisher");
+            alert("Failed to add genre");
         }
     })
 
     myModal.show();
 }
 
-const addPublisherDetails = async() => {
+const addGenreDetails = async() => {
     const jsondata = {
-        publisher_name: document.getElementById('publisher_name').value
+        genre_name: document.getElementById('genre_name').value
     };
 
     const formData = new FormData();
-    formData.append('operation', "addpublisher");
+    formData.append('operation', "addGenre");
     formData.append("json", JSON.stringify(jsondata));
 
     const response = await axios({
-        url: `${sessionStorage.url}/publishers.php`,
+        url: `${sessionStorage.url}/genres.php`,
         method: "POST",
         data: formData
     })

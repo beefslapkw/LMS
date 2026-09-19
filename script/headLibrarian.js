@@ -9,12 +9,37 @@ import { addCategory } from "./categorymodules/add.js";
 import { viewCategory } from "./categorymodules/view.js";
 import { updateCategory } from "./categorymodules/update.js";
 
+import { addAuthor } from "./authorsmodules/add.js";
+import { viewAuthor } from "./authorsmodules/view.js";
+import { updateAuthor } from "./authorsmodules/update.js";
 
-import { addAuthor } from "./authormodules/add.js";
-import { viewAuthor } from "./authormodules/view.js";
-import { updateAuthor } from "./authormodules/update.js";
-import { addPublisher } from "./categorymodules/publishermodules/add.js";
+import { addPublisher } from "./publishermodules/add.js";
+import { viewPublisher } from "./publishermodules/view.js";
+import { updatePublisher } from "./publishermodules/update.js";
 
+import { addGenre } from "./genremodules/add.js";
+import { viewGenre } from "./genremodules/view.js";
+import { updateGenre } from "./genremodules/update.js";
+
+import { addDepartment } from "./departmentmodules/add.js";
+import { viewDepartment } from "./departmentmodules/view.js";
+import { updateDepartment } from "./departmentmodules/update.js";
+
+import { addRole } from "./rolemodules/add.js";
+import { viewRole } from "./rolemodules/view.js";
+import { updateRole } from "./rolemodules/update.js";
+
+import { addStatus } from "./statusmodules/add.js";
+import { viewStatus } from "./statusmodules/view.js";
+import { updateStatus } from "./statusmodules/update.js";
+
+import { addCondition } from "./conditionmodules/add.js";
+import { viewCondition } from "./conditionmodules/view.js";
+import { updateCondition } from "./conditionmodules/update.js";
+
+import { addDisposalReason } from "./disposalreasonmodules/add.js";
+import { viewDisposalReason } from "./disposalreasonmodules/view.js";
+import { updateDisposalReason } from "./disposalreasonmodules/update.js";
 
 const url = "http://localhost/LMS/api";
 sessionStorage.setItem("url", url);
@@ -26,15 +51,50 @@ let categories = [];
 document.getElementById('welcome').innerHTML = `Welcome Head Librarian ${sessionStorage.fullname}`;
 
 const getAllDepartments = async() => {
+    const departmentstablediv = document.getElementById('departmentstablediv');
+
     const response = await axios.get(`${url}/departments.php`,{
         params:{operation:"getAllDepartments"}
     })
 
+    departmentstablediv.innerHTML = '';
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+        <tr>
+            <th>Department Name</th>
+            <th>Action</th>
+        </tr>
+    `;
+    table.appendChild(thead);
+    table.classList.add("table", "table-hover", "table-striped", "table-sm");
+    const tbody = document.createElement('tbody');
+
     if(response.status == 200){
         console.log(response.data);
+        departments = [];
         response.data.forEach(department => {
             departments.push(department);
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${department.department_name}</td>
+                <td>
+                    <button class="btn btn-secondary btn-sm view">View</button>
+                    <button class="btn btn-success btn-sm update">Update</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+
+            row.querySelector(".view").addEventListener('click', () => {
+                viewDepartment(department.department_id);
+            })
+            row.querySelector(".update").addEventListener('click', () => {
+                updateDepartment(department.department_id, getAllDepartments);
+            })
         })
+        table.appendChild(tbody);
+        departmentstablediv.appendChild(table);
     }
     else{
         alert("ERROR");
@@ -42,15 +102,197 @@ const getAllDepartments = async() => {
 }
 
 const getAllRoles = async() => {
+    const rolestablediv = document.getElementById('rolestablediv');
+
     const response = await axios.get(`${url}/roles.php`,{
         params:{operation:"getAllRoles"}
     })
 
+    rolestablediv.innerHTML = '';
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+        <tr>
+            <th>Role Name</th>
+            <th>Action</th>
+        </tr>
+    `;
+    table.appendChild(thead);
+    table.classList.add("table", "table-hover", "table-striped", "table-sm");
+    const tbody = document.createElement('tbody');
+
     if(response.status == 200){
         console.log(response.data);
+        roles = [];
         response.data.forEach(role => {
             roles.push(role);
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${role.role_type}</td>
+                <td>
+                    <button class="btn btn-secondary btn-sm view">View</button>
+                    <button class="btn btn-success btn-sm update">Update</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+
+            row.querySelector(".view").addEventListener('click', () => {
+                viewRole(role.role_id);
+            })
+            row.querySelector(".update").addEventListener('click', () => {
+                updateRole(role.role_id, getAllRoles);
+            })
         })
+        table.appendChild(tbody);
+        rolestablediv.appendChild(table);
+    }
+    else{
+        alert("ERROR");
+    }
+}
+
+const getAllStatuses = async() => {
+    const statusestablediv = document.getElementById('statusestablediv');
+
+    const response = await axios.get(`${url}/statuses.php`,{
+        params:{operation:"getAllStatuses"}
+    })
+
+    statusestablediv.innerHTML = '';
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+        <tr>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    `;
+    table.appendChild(thead);
+    table.classList.add("table", "table-hover", "table-striped", "table-sm");
+    const tbody = document.createElement('tbody');
+
+    if(response.status == 200){
+        console.log(response.data);
+        response.data.forEach(status => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${status.status_desc}</td>
+                <td>
+                    <button class="btn btn-secondary btn-sm view">View</button>
+                    <button class="btn btn-success btn-sm update">Update</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+
+            row.querySelector(".view").addEventListener('click', () => {
+                viewStatus(status.status_id);
+            })
+            row.querySelector(".update").addEventListener('click', () => {
+                updateStatus(status.status_id, getAllStatuses);
+            })
+        })
+        table.appendChild(tbody);
+        statusestablediv.appendChild(table);
+    }
+    else{
+        alert("ERROR");
+    }
+}
+
+const getAllConditions = async() => {
+    const conditionstablediv = document.getElementById('conditionstablediv');
+
+    const response = await axios.get(`${url}/conditions.php`,{
+        params:{operation:"getAllConditions"}
+    })
+
+    conditionstablediv.innerHTML = '';
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+        <tr>
+            <th>Condition</th>
+            <th>Action</th>
+        </tr>
+    `;
+    table.appendChild(thead);
+    table.classList.add("table", "table-hover", "table-striped", "table-sm");
+    const tbody = document.createElement('tbody');
+
+    if(response.status == 200){
+        console.log(response.data);
+        response.data.forEach(condition => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${condition.condition_desc}</td>
+                <td>
+                    <button class="btn btn-secondary btn-sm view">View</button>
+                    <button class="btn btn-success btn-sm update">Update</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+
+            row.querySelector(".view").addEventListener('click', () => {
+                viewCondition(condition.condition_id);
+            })
+            row.querySelector(".update").addEventListener('click', () => {
+                updateCondition(condition.condition_id, getAllConditions);
+            })
+        })
+        table.appendChild(tbody);
+        conditionstablediv.appendChild(table);
+    }
+    else{
+        alert("ERROR");
+    }
+}
+
+const getAllDisposalReasons = async() => {
+    const disposalreasonstablediv = document.getElementById('disposalreasonstablediv');
+
+    const response = await axios.get(`${url}/disposalreasons.php`,{
+        params:{operation:"getAllDisposalReasons"}
+    })
+
+    disposalreasonstablediv.innerHTML = '';
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+        <tr>
+            <th>Reason</th>
+            <th>Action</th>
+        </tr>
+    `;
+    table.appendChild(thead);
+    table.classList.add("table", "table-hover", "table-striped", "table-sm");
+    const tbody = document.createElement('tbody');
+
+    if(response.status == 200){
+        console.log(response.data);
+        response.data.forEach(reason => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${reason.reason_desc}</td>
+                <td>
+                    <button class="btn btn-secondary btn-sm view">View</button>
+                    <button class="btn btn-success btn-sm update">Update</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+
+            row.querySelector(".view").addEventListener('click', () => {
+                viewDisposalReason(reason.reason_id);
+            })
+            row.querySelector(".update").addEventListener('click', () => {
+                updateDisposalReason(reason.reason_id, getAllDisposalReasons);
+            })
+        })
+        table.appendChild(tbody);
+        disposalreasonstablediv.appendChild(table);
     }
     else{
         alert("ERROR");
@@ -385,10 +627,19 @@ const getAllPublishers = async() => {
             row.innerHTML = `
                 <td>${publisher.publisher_id}</td>
                 <td>${publisher.publisher_name}</td>
+                 <td>
                     <button class="btn btn-secondary btn-sm view">View</button>
                     <button class="btn btn-success btn-sm update">Update</button>
+                </td>
             `;
             tbody.appendChild(row);
+
+            row.querySelector(".view").addEventListener('click', () => {
+                viewPublisher(publisher.publisher_id);
+            })
+            row.querySelector(".update").addEventListener('click', () => {
+                updatePublisher(publisher.publisher_id, getAllPublishers);
+            })
         })
         table.appendChild(tbody);
         publisherstablediv.appendChild(table);
@@ -399,15 +650,50 @@ const getAllPublishers = async() => {
 }
 
 const getAllGenres = async() => {
+    const genrestablediv = document.getElementById('genrestablediv');
+
     const response = await axios.get(`${url}/genres.php`,{
         params:{operation:"getAllGenres"}
     })
 
+    genrestablediv.innerHTML = '';
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+        <tr>
+            <th>Genre Name</th>
+            <th>Action</th>
+        </tr>
+    `;
+    table.appendChild(thead);
+    table.classList.add("table", "table-hover", "table-striped", "table-sm");
+    const tbody = document.createElement('tbody');
+
     if(response.status == 200){
         console.log(response.data);
+        genres = [];
         response.data.forEach(genre => {
             genres.push(genre);
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${genre.genre_name}</td>
+                <td>
+                    <button class="btn btn-secondary btn-sm view">View</button>
+                    <button class="btn btn-success btn-sm update">Update</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+
+            row.querySelector(".view").addEventListener('click', () => {
+                viewGenre(genre.genre_id);
+            })
+            row.querySelector(".update").addEventListener('click', () => {
+                updateGenre(genre.genre_id, getAllGenres);
+            })
         })
+        table.appendChild(tbody);
+        genrestablediv.appendChild(table);
     }
     else{
         alert("ERROR");
@@ -474,13 +760,35 @@ document.addEventListener('DOMContentLoaded', () => {
     getAllPublishers();
     getAllGenres();
     getAllCategories();
+    getAllStatuses();
+    getAllConditions();
+    getAllDisposalReasons();
+
     document.getElementById('addcategory').addEventListener('click', () => {
         addCategory(getAllCategories);
     })
     document.getElementById('addauthor').addEventListener('click', () => {
         addAuthor(getAllAuthors);
-    })
-    document.getElementById('addpublisher       ').addEventListener('click', () => {
+    }) 
+    document.getElementById('addpublisher').addEventListener('click', () => {
         addPublisher(getAllPublishers);
+    })
+    document.getElementById('addgenre').addEventListener('click', () => {
+        addGenre(getAllGenres);
+    })
+    document.getElementById('adddepartment').addEventListener('click', () => {
+        addDepartment(getAllDepartments);
+    })
+    document.getElementById('addrole').addEventListener('click', () => {
+        addRole(getAllRoles);
+    })
+    document.getElementById('addstatus').addEventListener('click', () => {
+        addStatus(getAllStatuses);
+    })
+    document.getElementById('addcondition').addEventListener('click', () => {
+        addCondition(getAllConditions);
+    })
+    document.getElementById('adddisposalreason').addEventListener('click', () => {
+        addDisposalReason(getAllDisposalReasons);
     })
 })
