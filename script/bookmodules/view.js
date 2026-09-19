@@ -1,4 +1,4 @@
-export const viewBookDetails = async(book_id) => {
+export const viewBook = async(book_id) => {
     document.getElementById("blank-modal-title").innerText = "View Details";
 
     const book = await getBook(book_id);

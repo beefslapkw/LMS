@@ -1,9 +1,13 @@
-import { viewBookDetails } from "./bookmodules/view.js";
+import { viewBook } from "./bookmodules/view.js";
+import { updateBook } from "./bookmodules/update.js";
+import { deactivateBook } from "./bookmodules/deactivate.js";
+import { reactivateBook } from "./bookmodules/reactivate.js";
 // import { updateDetails } from "./bookmodules/update.js";
 // import { deactivateUser } from "./bookmodules/deactivate.js";
 // import { reactivateUser } from "./bookmodules/reactivate.js";
 import { viewCopy } from "./bookcopymodules/view.js";
 import { addCopy } from "./bookcopymodules/add.js";
+
 
 const url = "http://localhost/LMS/api";
 sessionStorage.setItem("url", url);
@@ -154,23 +158,23 @@ const getAllBooks = async() => {
             tbody.appendChild(row);
 
             row.querySelector(".view").addEventListener('click', () => {
-                viewBookDetails(book.book_id);
+                viewBook(book.book_id);
             })
             row.querySelector(".update").addEventListener('click', () => {
-                updateDetails(book.book_id, departments, roles, getAllUsers);
+                updateBook(book.book_id, authors, categories, genres, publishers, getAllBooks);
             })
             
             const deactivateBtn = row.querySelector(".deactivate");
             if(deactivateBtn){
                 deactivateBtn.addEventListener('click', () => {
-                    deactivateUser(user.user_id, getAllUsers);
+                    deactivateBook(book.book_id, getAllBooks);
                 })
             }
             
             const reactivateBtn = row.querySelector(".reactivate");
             if(reactivateBtn){
                 reactivateBtn.addEventListener('click', () => {
-                    reactivateUser(user.user_id, getAllUsers);
+                    reactivateBook(book.book_id, getAllBooks);
                 })
             }
         })
@@ -402,7 +406,7 @@ const addBook = async() => {
                 <td>Category</td>  
                 <td>
                     ${buildCategoryDropdown(categories)}
-                <td>
+                </td>
             </tr>
             <tr>   
                 <td>Genre</td>
