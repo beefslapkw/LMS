@@ -2,6 +2,7 @@ export const viewBook = async(book_id) => {
     document.getElementById("blank-modal-title").innerText = "View Details";
 
     const book = await getBook(book_id);
+    const authorNames = book.authors.map(a => a.author_name).join(', ');
 
     const myHtml = `
         <table class="table table-sm">
@@ -20,7 +21,7 @@ export const viewBook = async(book_id) => {
             <tr>   
                 <td>Authors</td>
                 <td>
-                    ${book.authors}
+                    ${authorNames}
                 </td>
             </tr>
             <tr>

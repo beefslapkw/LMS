@@ -63,12 +63,23 @@ const register = async() => {
 
     if(response.data == 1){
         alert("Successfully Registered");
+        clearForm();
     }
     else{
         alert(response.data);
     }
 }
 
+const clearForm = () => {
+    document.getElementById('idnum').value = "";
+    document.getElementById('lastn').value = "";
+    document.getElementById('firstn').value = "";
+    document.getElementById('contact').value = "";
+    document.getElementById('email').value = "";
+    document.getElementById('username').value = "";
+    document.getElementById('password').value = "";
+    departmentlist.value = "";
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     getAllDepartments();

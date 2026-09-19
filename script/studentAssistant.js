@@ -9,7 +9,7 @@ import { reactivateBook } from "./bookmodules/reactivate.js";
 import { addCopy } from "./bookcopymodules/add.js";
 import { viewCopy } from "./bookcopymodules/view.js";
 import { updateCopy } from "./bookcopymodules/update.js";
-
+import { disposeCopy } from "./bookcopymodules/dispose.js";
 
 const url = "http://localhost/LMS/api";
 sessionStorage.setItem("url", url);
@@ -18,6 +18,7 @@ let categories = [];
 let authors = [];
 let publishers = [];
 let conditions = [];
+let disposalreasons = [];
 
 document.getElementById('welcome').innerHTML = `Welcome Student Assistant ${sessionStorage.fullname}`;
 
@@ -172,6 +173,7 @@ const getAllCopies = async() => {
                 <td>
                     <button class="btn btn-secondary btn-sm view">View</button>
                     <button class="btn btn-success btn-sm update">Update</button>
+                    <button class="btn btn-danger btn-sm dispose">Dispose</button>
                 </td>
             `;
             tbody.appendChild(row);
@@ -181,6 +183,9 @@ const getAllCopies = async() => {
             })
             row.querySelector(".update").addEventListener('click', () => {
                 updateCopy(copy.copy_id, conditions, getAllCopies);
+            })
+            row.querySelector(".dispose").addEventListener('click', () => {
+                disposeCopy(copy.copy_id, disposalreasons, 3, getAllCopies);
             })
         })
         table.appendChild(tbody);
@@ -327,6 +332,22 @@ const getAllConditions = async() => {
     }
 }
 
+const getAllDisposalReasons = async() => {
+    const response = await axios.get(`${url}/disposalreasons.php`,{
+        params:{operation: "getAllDisposalReasons"}
+    })
+
+    if(response.status == 200){
+        console.log(response.data);
+        response.data.forEach(reason => {
+            disposalreasons.push(reason);
+        })
+    }
+    else{
+        alert("ERROR");
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     getAllBooks();
     getAllCopies();
@@ -335,6 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
     getAllGenres();
     getAllCategories();
     getAllConditions();
+    getAllDisposalReasons();
     document.getElementById('addbook').addEventListener('click', () => {
         addBook(authors, categories, genres, publishers, getAllBooks);
     })

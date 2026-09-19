@@ -98,6 +98,40 @@
 
             return json_encode($returnValue);
         }
+        function disposeCopy($json){
+            include "connection.php";
+
+            $json = json_decode($json, true);
+
+            try{
+                $conn->beginTransaction();
+
+                $sql = "UPDATE book_copies SET status_id=:status_id
+                    WHERE copy_id=:copy_id";
+                $stmt = $conn->prepare($sql);
+                $stmt->bindParam(":copy_id", $json['copy_id']);
+                $stmt->bindParam(":status_id", $json['status_id']);
+                $stmt->execute();
+
+                $sqlDispose = "INSERT INTO disposal_records(copy_id, reason_id, disposed_by, disposed_at, remarks)
+                    VALUES(:copy_id, :reason_id, :disposed_by, NOW(), :remarks)";
+                $stmtDispose = $conn->prepare($sqlDispose);
+                $stmtDispose->bindParam(":copy_id", $json['copy_id']);
+                $stmtDispose->bindParam(":reason_id", $json['reason_id']);
+                $stmtDispose->bindParam(":disposed_by", $json['disposed_by']);
+                $stmtDispose->bindParam(":remarks", $json['remarks']);
+                $stmtDispose->execute();
+
+                $conn->commit();
+                $returnValue = 1;
+            }
+            catch(Exception $e){
+                $conn->rollBack();
+                $returnValue = 0;
+            }
+
+            return json_encode($returnValue);
+        }
     }
 
     if($_SERVER['REQUEST_METHOD'] == 'GET'){
@@ -122,6 +156,9 @@
             break;
         case "updateCopy":
             echo $bookcopy->updateCopy($json);
+            break;
+        case "disposeCopy":
+            echo $bookcopy->disposeCopy($json);
             break;
     }
 ?>
