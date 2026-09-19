@@ -3,7 +3,7 @@ import { updateDetails } from "./usermodules/update.js";
 import { deactivateUser } from "./usermodules/deactivate.js";
 import { reactivateUser } from "./usermodules/reactivate.js";
 
-import { viewBookDetails } from "./bookmodules/view.js";
+import { viewBook } from "./bookmodules/view.js";
 
 import { addCategory } from "./categorymodules/add.js";
 
@@ -205,7 +205,7 @@ const getAllBooks = async() => {
             tbody.appendChild(row);
 
             row.querySelector(".view").addEventListener('click', () => {
-                viewBookDetails(book.book_id);
+                viewBook(book.book_id);
             })
             row.querySelector(".update").addEventListener('click', () => {
                 updateDetails(book.book_id, departments, roles, getAllUsers);
