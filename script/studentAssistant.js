@@ -6,8 +6,9 @@ import { reactivateBook } from "./bookmodules/reactivate.js";
 // import { updateDetails } from "./bookmodules/update.js";
 // import { deactivateUser } from "./bookmodules/deactivate.js";
 // import { reactivateUser } from "./bookmodules/reactivate.js";
-import { viewCopy } from "./bookcopymodules/view.js";
 import { addCopy } from "./bookcopymodules/add.js";
+import { viewCopy } from "./bookcopymodules/view.js";
+import { updateCopy } from "./bookcopymodules/update.js";
 
 
 const url = "http://localhost/LMS/api";
@@ -16,7 +17,7 @@ let genres = [];
 let categories = [];
 let authors = [];
 let publishers = [];
-let selectedauthors = [];
+let conditions = [];
 
 document.getElementById('welcome').innerHTML = `Welcome Student Assistant ${sessionStorage.fullname}`;
 
@@ -178,6 +179,9 @@ const getAllCopies = async() => {
             row.querySelector(".view").addEventListener('click', () => {
                 viewCopy(copy.copy_id);
             })
+            row.querySelector(".update").addEventListener('click', () => {
+                updateCopy(copy.copy_id, conditions, getAllCopies);
+            })
         })
         table.appendChild(tbody);
         copiestablediv.appendChild(table);
@@ -307,6 +311,22 @@ const getAllCategories = async() => {
     }
 }
 
+const getAllConditions = async() => {
+    const response = await axios.get(`${url}/conditions.php`,{
+        params:{operation:"getAllConditions"}
+    })
+
+    if(response.status == 200){
+        console.log(response.data);
+        response.data.forEach(condition => {
+            conditions.push(condition);
+        })
+    }
+    else{
+        alert("ERROR");
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     getAllBooks();
     getAllCopies();
@@ -314,6 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
     getAllPublishers();
     getAllGenres();
     getAllCategories();
+    getAllConditions();
     document.getElementById('addbook').addEventListener('click', () => {
         addBook(authors, categories, genres, publishers, getAllBooks);
     })

@@ -60,7 +60,7 @@
 
             $json = json_decode($json, true);
 
-            $sql = "SELECT bc.copy_id, bc.accession_number, bc.condition_notes, bc.added_at,
+            $sql = "SELECT bc.copy_id, bc.accession_number, bc.condition_notes, bc.added_at, bc.condition_id,
                     b.book_title,
                     s.status_desc,
                     c.condition_desc,
@@ -77,6 +77,26 @@
             $rs = $stmt->fetch(PDO::FETCH_ASSOC);
 
             return json_encode($rs);
+        }
+        function updateCopy($json){
+            include "connection.php";
+
+            $json = json_decode($json, true);
+
+            $sql = "UPDATE book_copies set condition_id=:condition_id, condition_notes=:condition_notes
+                WHERE copy_id=:copy_id";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindParam(":copy_id", $json['copy_id']);
+            $stmt->bindParam(":condition_id", $json['condition_id']);
+            $stmt->bindParam(":condition_notes", $json['condition_notes']);
+            $stmt->execute();
+
+            $returnValue = 0;
+            if($stmt->rowCount() > 0){
+                $returnValue = 1;
+            }
+
+            return json_encode($returnValue);
         }
     }
 
@@ -99,6 +119,9 @@
             break;
         case "getCopy":
             echo $bookcopy->getCopy($json);
+            break;
+        case "updateCopy":
+            echo $bookcopy->updateCopy($json);
             break;
     }
 ?>
