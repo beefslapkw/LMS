@@ -18,9 +18,9 @@
 
             $json = json_decode($json, true);
 
-            $sql = "INSERT INTO roles(role_name) VALUES(:role_name)";
+            $sql = "INSERT INTO roles(role_type) VALUES(:role_type)";
             $stmt = $conn->prepare($sql);
-            $stmt->bindParam(":role_name", $json['role_name']);
+            $stmt->bindParam(":role_type", $json['role_type']);
             $stmt->execute();
             $returnValue = 0;
 
@@ -48,11 +48,11 @@
 
             $json = json_decode($json, true);
 
-            $sql = "UPDATE roles SET role_name=:role_name 
+            $sql = "UPDATE roles SET role_type=:role_type 
             WHERE role_id=:role_id";
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(":role_id", $json['role_id']);
-            $stmt->bindParam(":role_name", $json['role_name']);
+            $stmt->bindParam(":role_type", $json['role_type']);
             $stmt->execute();
             $returnValue = 0;
 
