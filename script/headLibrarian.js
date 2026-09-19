@@ -6,6 +6,15 @@ import { reactivateUser } from "./usermodules/reactivate.js";
 import { viewBook } from "./bookmodules/view.js";
 
 import { addCategory } from "./categorymodules/add.js";
+import { viewCategory } from "./categorymodules/view.js";
+import { updateCategory } from "./categorymodules/update.js";
+
+
+import { addAuthor } from "./authormodules/add.js";
+import { viewAuthor } from "./authormodules/view.js";
+import { updateAuthor } from "./authormodules/update.js";
+import { addPublisher } from "./categorymodules/publishermodules/add.js";
+
 
 const url = "http://localhost/LMS/api";
 sessionStorage.setItem("url", url);
@@ -300,12 +309,15 @@ const getAllAuthors = async() => {
         params:{operation:"getAllAuthors"}
     })
 
+    authorstablediv.innerHTML = "";
+
     const table = document.createElement('table');
     const thead = document.createElement('thead');
     thead.innerHTML = `
         <tr>
             <th>Author ID</th>
             <th>Author Name</th>
+            <th>Actions</th>
         </tr>
     `;
     table.appendChild(thead);
@@ -325,8 +337,19 @@ const getAllAuthors = async() => {
             row.innerHTML = `
                 <td>${author.author_id}</td>
                 <td>${author.author_name}</td>
+                <td>
+                    <button class="btn btn-secondary btn-sm view">View</button>
+                    <button class="btn btn-success btn-sm update">Update</button>
+                </td>
             `;
             tbody.appendChild(row);
+
+            row.querySelector(".view").addEventListener('click', () => {
+                viewAuthor(author.author_id);
+            })
+            row.querySelector(".update").addEventListener('click', () => {
+                updateAuthor(author.author_id, getAllAuthors);
+            })
         })
         table.appendChild(tbody);
         authorstablediv.appendChild(table);
@@ -362,6 +385,8 @@ const getAllPublishers = async() => {
             row.innerHTML = `
                 <td>${publisher.publisher_id}</td>
                 <td>${publisher.publisher_name}</td>
+                    <button class="btn btn-secondary btn-sm view">View</button>
+                    <button class="btn btn-success btn-sm update">Update</button>
             `;
             tbody.appendChild(row);
         })
@@ -403,6 +428,7 @@ const getAllCategories = async() => {
     thead.innerHTML = `
     <tr>
         <th>Category Type</th>
+        <th>Action</th>
     </tr>
     `;
     table.appendChild(thead);
@@ -410,13 +436,25 @@ const getAllCategories = async() => {
     const tbody = document.createElement('tbody');
 
     if(response.status == 200){
-        console.log(response.data);
+        console.log(response.data); 
         response.data.forEach(category => {
             categories.push(category);
             const row = document.createElement('tr');
-            row.innerHTML = `<td>${category.category_type}</td>`;
-
+            row.innerHTML = `
+                <td>${category.category_type}</td>
+                <td>
+                    <button class="btn btn-secondary btn-sm view">View</button>
+                    <button class="btn btn-success btn-sm update">Update</button>
+                </td>
+            `;
             tbody.appendChild(row);
+
+            row.querySelector(".view").addEventListener('click', () => {
+                viewCategory(category.category_id);
+            })
+            row.querySelector(".update").addEventListener('click', () => {
+                updateCategory(category.category_id, getAllCategories);
+            })
         })
         table.appendChild(tbody);
         categoriestablediv.appendChild(table);
@@ -438,5 +476,11 @@ document.addEventListener('DOMContentLoaded', () => {
     getAllCategories();
     document.getElementById('addcategory').addEventListener('click', () => {
         addCategory(getAllCategories);
+    })
+    document.getElementById('addauthor').addEventListener('click', () => {
+        addAuthor(getAllAuthors);
+    })
+    document.getElementById('addpublisher       ').addEventListener('click', () => {
+        addPublisher(getAllPublishers);
     })
 })
