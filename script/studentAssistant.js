@@ -1,4 +1,6 @@
 import { startBorrow } from "./borrowtransactionmodules/borrow.js";
+import { startReturn } from "./returntransactionmodules/return.js";
+import { startRenew } from "./renewalmodules/renewal.js";
 import { addBook } from "./bookmodules/add.js";
 import { viewBook } from "./bookmodules/view.js";
 import { updateBook } from "./bookmodules/update.js";
@@ -18,6 +20,8 @@ let authors = [];
 let publishers = [];
 let conditions = [];
 let disposalreasons = [];
+let allborrows = [];
+let activeborrows = [];
 
 document.getElementById('welcome').innerHTML = `Welcome Student Assistant ${sessionStorage.fullname}`;
 
@@ -376,6 +380,10 @@ const getAllBorrows = async() => {
 
     if(response.status == 200){
         console.log(response.data);
+
+        allborrows = response.data;
+        activeborrows = allborrows.filter(item => item.is_returned == 0);
+
         response.data.forEach(transaction => { 
             let status;
             if(transaction.is_returned == 1){
@@ -412,6 +420,208 @@ const getAllBorrows = async() => {
     }
 }
 
+const getAllReturns = async() => {
+    const returnstablediv = document.getElementById('returnstablediv');
+
+    const response = await axios.get(`${url}/returntransactions.php`,{
+        params:{operation:"getAllReturnTransactions"}
+    })
+
+    returnstablediv.innerHTML = '';
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+        <tr>
+            <th>Accession Number</th>
+            <th>Book Title</th>
+            <th>Borrower</th>
+            <th>Due Date</th>
+            <th>Returned At</th>
+            <th>Condition on Return</th>
+            <th>Condition Notes</th>
+            <th>Received By</th>
+        </tr>
+    `;
+    table.appendChild(thead);
+    table.classList.add("table", "table-hover", "table-striped", "table-sm");
+    const tbody = document.createElement('tbody');
+
+    if(response.status == 200){
+        console.log(response.data);
+        response.data.forEach(transaction => { 
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${transaction.accession_number}</td>
+                <td>${transaction.book_title}</td>
+                <td>${transaction.borrower_first_name + " " + transaction.borrower_last_name}</td>
+                <td>${transaction.expires_at}</td>
+                <td>${transaction.returned_at}</td>
+                <td>${transaction.condition_desc}</td>
+                <td>${transaction.condition_notes}</td>
+                <td>${transaction.received_by_first_name + " " + transaction.received_by_last_name}</td>
+            `;
+            tbody.appendChild(row);
+        })
+        table.appendChild(tbody);
+        returnstablediv.appendChild(table);
+    }
+    else{
+        alert("ERROR");
+    }
+}
+
+const getAllRenewals = async() => {
+    const renewalstablediv = document.getElementById('renewalstablediv');
+
+    const response = await axios.get(`${url}/renewals.php`,{
+        params:{operation:"getAllRenewals"}
+    })
+
+    renewalstablediv.innerHTML = '';
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+        <tr>
+            <th>Accession Number</th>
+            <th>Book Title</th>
+            <th>Borrower</th>
+            <th>Old Due Date</th>
+            <th>New Due Date</th>
+            <th>Renewed At</th>
+            <th>Renewed By</th>
+        </tr>
+    `;
+    table.appendChild(thead);
+    table.classList.add("table", "table-hover", "table-striped", "table-sm");
+    const tbody = document.createElement('tbody');
+
+    if(response.status == 200){
+        console.log(response.data);
+        response.data.forEach(transaction => { 
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${transaction.accession_number}</td>
+                <td>${transaction.book_title}</td>
+                <td>${transaction.borrower_first_name + " " + transaction.borrower_last_name}</td>
+                <td>${transaction.old_due_date}</td>
+                <td>${transaction.new_due_date}</td>
+                <td>${transaction.renewed_at}</td>
+                <td>${transaction.renewed_by_first_name + " " + transaction.renewed_by_last_name}</td>
+            `;
+            tbody.appendChild(row);
+        })
+        table.appendChild(tbody);
+        renewalstablediv.appendChild(table);
+    }
+    else{
+        alert("ERROR");
+    }
+}
+
+const getAllFines = async() => {
+    const finestablediv = document.getElementById('finestablediv');
+
+    const response = await axios.get(`${url}/fines.php`,{
+        params:{operation:"getAllFines"}
+    })
+
+    finestablediv.innerHTML = '';
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+        <tr>
+            <th>Accession Number</th>
+            <th>Book Title</th>
+            <th>Borrower</th>
+            <th>Days Late</th>
+            <th>Fine Amount</th>
+            <th>Status</th>
+            <th>Paid At</th>
+            <th>Actions</th>
+        </tr>
+    `;
+    table.appendChild(thead);
+    table.classList.add("table", "table-hover", "table-striped", "table-sm");
+    const tbody = document.createElement('tbody');
+
+    if(response.status == 200){
+        console.log(response.data);
+        response.data.forEach(fine => { 
+            let paidAt;
+            if(!fine.paid_at){
+                paidAt = "-";
+            }
+            else{
+                paidAt = fine.paid_at;
+            }
+            let paybutton = '';
+            if(fine.is_paid == 0){
+                paybutton= `<button class="btn btn-success btn-sm pay">Pay</button>`;
+            }
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${fine.accession_number}</td>
+                <td>${fine.book_title}</td>
+                <td>${fine.first_name + " " + fine.last_name}</td>
+                <td>${fine.days_late}</td>
+                <td>${fine.fine_amount}</td>
+                <td>${fine.is_paid == 1 ? "Paid" : "Unpaid"}</td>
+                <td>${paidAt}</td>
+                <td>
+                    ${paybutton}
+                </td>
+            `;
+            tbody.appendChild(row);
+            
+            const payBtn = row.querySelector(".pay");
+            if(payBtn){
+                payBtn.addEventListener('click', async() => {
+                    const confirmed = confirm(`Mark this fine of ${fine.fine_amount} as paid?`);
+                    if(!confirmed){
+                        return;
+                    }
+
+                    if(await payFineDetails(fine.fine_id) == 1){
+                        getAllFines();
+                        alert("Fine marked as paid");
+                    }
+                    else{
+                        alert("Failed to update fine");
+                    }
+                })
+            }
+        })
+        table.appendChild(tbody);
+        finestablediv.appendChild(table);
+    }
+    else{
+        alert("ERROR");
+    }
+}
+
+const payFineDetails = async(fine_id) => {
+    const jsondata = { 
+        fine_id: fine_id 
+    };
+
+    const formData = new FormData();
+    formData.append('operation', "payFine");
+    formData.append('json', JSON.stringify(jsondata));
+
+    const response = await axios({
+        url: `${sessionStorage.url}/fines.php`,
+        method: "POST",
+        data: formData
+    })
+
+    console.log(response.data);
+    return response.data;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     getAllBooks();
     getAllCopies();
@@ -422,8 +632,17 @@ document.addEventListener('DOMContentLoaded', () => {
     getAllConditions();
     getAllDisposalReasons();
     getAllBorrows();
+    getAllReturns();
+    getAllRenewals();
+    getAllFines();
     document.getElementById('startborrow').addEventListener('click', () => {
         startBorrow(copies, getAllBorrows);
+    })
+    document.getElementById('startreturn').addEventListener('click', () => {
+        startReturn(activeborrows, conditions, getAllBorrows, getAllReturns);
+    })
+    document.getElementById('startrenew').addEventListener('click', () => {
+        startRenew(activeborrows, getAllBorrows, getAllRenewals);
     })
     document.getElementById('addbook').addEventListener('click', () => {
         addBook(authors, categories, genres, publishers, getAllBooks);

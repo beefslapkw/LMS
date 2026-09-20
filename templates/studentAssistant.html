@@ -60,8 +60,40 @@
                     </div>
                 </div>
                 <hr class="my-4">
-                <h5>All Borrow Transactions</h5>
-                <div id="borrowstablediv"></div> <br>
+
+                <ul class="nav nav-pills mb-3" id="recordsnav">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#borrows-record" type="button">Borrows</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#returns-record" type="button">Returns</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#renewals-record" type="button">Renewals</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#fines-record" type="button">Fines</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="borrows-record">
+                        <div id="borrowstablediv"></div> <br>
+                    </div>
+                    <div class="tab-pane fade" id="returns-record">
+                        <div id="returnstablediv"></div> <br>
+                    </div>
+                    <div class="tab-pane fade" id="renewals-record">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span></span>
+                            <button type="button" class="btn btn-success btn-sm" id="startrenew">+ New Renewal</button>
+                        </div>
+                        <div id="renewalstablediv"></div> <br>
+                    </div>
+                    <div class="tab-pane fade" id="fines-record">
+                        <div id="finestablediv"></div> <br>
+                    </div>
+                </div>
             </div>
 
             <div class="tab-pane fade" id="books-tab">
