@@ -109,7 +109,7 @@ const renderSelectedReturns = (conditions) => {
         card.classList.add('border', 'rounded', 'p-2', 'mb-2');
         card.innerHTML = `
             <div class="d-flex justify-content-between align-items-center">
-                <span>${item.book_title} (${item.accession_number}) — ${item.borrower_name} — <strong>${statusLabel}</strong></span>
+                <span>${item.book_title} (${item.accession_number}) - ${item.borrower_name} - <strong>${statusLabel}</strong></span>
                 <button type="button" class="btn btn-sm btn-outline-danger remove">&times;</button>
             </div>
             <div class="mt-2">
