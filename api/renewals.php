@@ -13,12 +13,12 @@
                         borrower.first_name AS borrower_first_name, borrower.last_name AS borrower_last_name,
                         renewer.first_name AS renewed_by_first_name, renewer.last_name AS renewed_by_last_name
                 FROM renewal_records rr
-                INNER JOIN borrow_items bi ON rr.borrow_item_id = bi.borrow_item_id
-                INNER JOIN borrow_transactions bt ON bi.transaction_id = bt.transaction_id
-                INNER JOIN book_copies bc ON bi.copy_id = bc.copy_id
-                INNER JOIN books b ON bc.book_id = b.book_id
-                INNER JOIN users borrower ON bt.borrower_id = borrower.user_id
-                INNER JOIN users renewer ON rr.renewed_by = renewer.user_id
+                INNER JOIN borrow_items bi ON rr.borrow_item_id=bi.borrow_item_id
+                INNER JOIN borrow_transactions bt ON bi.transaction_id=bt.transaction_id
+                INNER JOIN book_copies bc ON bi.copy_id=bc.copy_id
+                INNER JOIN books b ON bc.book_id=b.book_id
+                INNER JOIN users borrower ON bt.borrower_id=borrower.user_id
+                INNER JOIN users renewer ON rr.renewed_by=renewer.user_id
                 ORDER BY rr.renewed_at DESC";
             $stmt = $conn->prepare($sql);
             $stmt->execute();
@@ -38,52 +38,68 @@
             try{
                 $conn->beginTransaction();
 
-                //di pwede mag renew kung nay fine
-                $sqlFineCheck = "SELECT COUNT(*) AS unpaidCount FROM fine_records
-                                WHERE borrow_item_id=:borrow_item_id AND is_paid=0";
-                $stmtFineCheck = $conn->prepare($sqlFineCheck);
-                $stmtFineCheck->bindParam(":borrow_item_id", $borrowItemId);
-                $stmtFineCheck->execute();
-                $fineInfo = $stmtFineCheck->fetch(PDO::FETCH_ASSOC);
-
-                if($fineInfo['unpaidCount'] > 0){
-                    $conn->rollBack();
-                    return json_encode("Cannot renew: this item has an unpaid fine");
-                }
-
-                //kwaon ang due date, role, ug category
-                $sqlInfo = "SELECT bi.expires_at, r.role_type, c.category_type
+                //kwaon ang item details
+                //basically icheck daan kung overdue na ba ang book by checking if ang current day kay lapas na sa expiry date
+                $sqlInfo = "SELECT bi.expires_at, 
+                                (bi.expires_at < NOW()) AS is_overdue,
+                                bt.borrower_id,
+                                r.role_type, 
+                                c.category_type
                             FROM borrow_items bi
-                            INNER JOIN borrow_transactions bt ON bi.transaction_id = bt.transaction_id
-                            INNER JOIN users u ON bt.borrower_id = u.user_id
-                            INNER JOIN roles r ON u.role_id = r.role_id
-                            INNER JOIN book_copies bc ON bi.copy_id = bc.copy_id
-                            INNER JOIN books b ON bc.book_id = b.book_id
-                            INNER JOIN categories c ON b.category_id = c.category_id
+                            INNER JOIN borrow_transactions bt ON bi.transaction_id=bt.transaction_id
+                            INNER JOIN users u ON bt.borrower_id=u.user_id
+                            INNER JOIN roles r ON u.role_id=r.role_id
+                            INNER JOIN book_copies bc ON bi.copy_id=bc.copy_id
+                            INNER JOIN books b ON bc.book_id=b.book_id
+                            INNER JOIN categories c ON b.category_id=c.category_id
                             WHERE bi.borrow_item_id=:borrow_item_id AND bi.is_returned=0";
+                
                 $stmtInfo = $conn->prepare($sqlInfo);
                 $stmtInfo->bindParam(":borrow_item_id", $borrowItemId);
                 $stmtInfo->execute();
                 $itemInfo = $stmtInfo->fetch(PDO::FETCH_ASSOC);
 
+                //icheck kung naa bay record, kung wala either wala ga exist or nauli na
                 if(!$itemInfo){
                     $conn->rollBack();
                     return json_encode("Item not found or already returned");
                 }
 
+                //icheck kung overdue na ba ang copy
+                if($itemInfo['is_overdue'] == 1){
+                    $conn->rollBack();
+                    return json_encode("This book is already overdue. Please return it to settle late fees.");
+                }
+
+                //icheck kung na bay outstanding balance from previous returns
+                $sqlUserFineCheck = "SELECT COUNT(*) AS unpaidCount
+                    FROM fine_records fr
+                    INNER JOIN borrow_items bi ON fr.borrow_item_id=bi.borrow_item_id
+                    INNER JOIN borrow_transactions bt ON bi.transaction_id=bt.transaction_id
+                    WHERE bt.borrower_id=:borrower_id AND fr.is_paid=0";
+
+                $stmtUserFine = $conn->prepare($sqlUserFineCheck);
+                $stmtUserFine->bindParam(":borrower_id", $itemInfo['borrower_id']);
+                $stmtUserFine->execute();
+                $userFine = $stmtUserFine->fetch(PDO::FETCH_ASSOC);
+
+                if($userFine['unpaidCount'] > 0){
+                    $conn->rollBack();
+                    return json_encode("Cannot renew, borrower has unpaid fines");
+                }
                 $oldDueDate = $itemInfo['expires_at'];
 
-                //extend ang duration based sa category ug role, basically pareha ra sa borrow
+                //extend ang duration based sa category ug role, basically pareha sa borrow
                 if($itemInfo['role_type'] == "Faculty"){
-                    $sqlUpdate = "UPDATE borrow_items SET expires_at=DATE_ADD(expires_at, INTERVAL 3 MONTH)
+                    $sqlUpdate = "UPDATE borrow_items SET expires_at = DATE_ADD(expires_at, INTERVAL 3 MONTH)
                                 WHERE borrow_item_id=:borrow_item_id";
                 }
                 elseif($itemInfo['category_type'] == "Educational"){
-                    $sqlUpdate = "UPDATE borrow_items SET expires_at=DATE_ADD(expires_at, INTERVAL 3 DAY)
+                    $sqlUpdate = "UPDATE borrow_items SET expires_at = DATE_ADD(expires_at, INTERVAL 3 DAY)
                                 WHERE borrow_item_id=:borrow_item_id";
                 }
                 else{
-                    $sqlUpdate = "UPDATE borrow_items SET expires_at=DATE_ADD(expires_at, INTERVAL 7 DAY)
+                    $sqlUpdate = "UPDATE borrow_items SET expires_at = DATE_ADD(expires_at, INTERVAL 7 DAY)
                                 WHERE borrow_item_id=:borrow_item_id";
                 }
                 $stmtUpdate = $conn->prepare($sqlUpdate);
@@ -102,8 +118,9 @@
                 //}
                 $newDueDate = $updatedItem ? $updatedItem['expires_at'] : null;
 
+                //insert sa renewal records
                 $sqlLog = "INSERT INTO renewal_records(borrow_item_id, old_due_date, new_due_date, renewed_at, renewed_by)
-                            VALUES(:borrow_item_id, :old_due_date, :new_due_date, NOW(), :renewed_by)";
+                        VALUES(:borrow_item_id, :old_due_date, :new_due_date, NOW(), :renewed_by)";
                 $stmtLog = $conn->prepare($sqlLog);
                 $stmtLog->bindParam(":borrow_item_id", $borrowItemId);
                 $stmtLog->bindParam(":old_due_date", $oldDueDate);

@@ -27,17 +27,27 @@ export const startRenew = async(allActiveBorrows, refreshBorrows, refreshRenewal
     document.getElementById("blank-main-div").innerHTML = myHtml;
 
     document.getElementById('findrenew').addEventListener('click', () => {
-        const accession = document.getElementById('renewaccession').value;
+        const accession = document.getElementById('renewaccession').value.trim();
 
         foundBorrowItem = allActiveBorrows.find(b => b.accession_number == accession && b.is_returned == 0);
 
         const resultDiv = document.getElementById('renewresult');
-        if(!foundBorrowItem){
+
+        if (!foundBorrowItem) {
             resultDiv.innerHTML = `<span class="text-danger">No active borrow found for this copy</span>`;
+            return;
         }
-        else{
-            resultDiv.innerHTML = `<span class="text-success">Found: ${foundBorrowItem.book_title}, borrowed by ${foundBorrowItem.borrower_first_name} ${foundBorrowItem.borrower_last_name} (due ${foundBorrowItem.expires_at})</span>`;
+
+        //check kung overdue na ba ang copy
+        const isOverdue = new Date(foundBorrowItem.expires_at) < new Date();
+
+        if (isOverdue) {
+            resultDiv.innerHTML = `<span class="text-danger">Found: ${foundBorrowItem.book_title} (Due: ${foundBorrowItem.expires_at}) — Cannot renew: book is already overdue</span>`;
+            foundBorrowItem = null; //ireset para di matiwas ang confirm renewal
+            return;
         }
+
+        resultDiv.innerHTML = `<span class="text-success">Found: ${foundBorrowItem.book_title}, borrowed by ${foundBorrowItem.borrower_first_name} ${foundBorrowItem.borrower_last_name} (due ${foundBorrowItem.expires_at})</span>`;
     })
 
     const modalFooter = document.getElementById("blank-modal-footer");

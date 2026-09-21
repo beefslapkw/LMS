@@ -112,13 +112,14 @@ export const startBorrow = async(allCopies, refreshDisplay) => {
             return;
         }
 
-        if(await submitBorrow() == 1){
+        const result = await submitBorrow();
+        if(result == 1){
             refreshDisplay();
             alert("Books successfully borrowed");
             myModal.hide();
         }
         else{
-            alert("Failed to process borrow");
+            alert(result || "Failed to process borrow");
         }
     })
 

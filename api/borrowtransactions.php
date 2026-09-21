@@ -35,6 +35,21 @@
         
             try{
                 $conn->beginTransaction();
+
+                $sqlFineCheck = "SELECT COUNT(*) AS unpaidCount
+                        FROM fine_records fr
+                        INNER JOIN borrow_items bi ON fr.borrow_item_id = bi.borrow_item_id
+                        INNER JOIN borrow_transactions bt ON bi.transaction_id = bt.transaction_id
+                        WHERE bt.borrower_id = :borrower_id AND fr.is_paid = 0";
+                $stmtFineCheck = $conn->prepare($sqlFineCheck);
+                $stmtFineCheck->bindParam(":borrower_id", $header['borrower_id']);
+                $stmtFineCheck->execute();
+                $fineInfo = $stmtFineCheck->fetch(PDO::FETCH_ASSOC);
+
+                if($fineInfo['unpaidCount'] > 0){
+                    $conn->rollBack();
+                    return json_encode("Borrow failed, user has unpaid fines");
+                }
         
                 $sqlRole = "SELECT r.role_type,
                                 (SELECT COUNT(*) FROM borrow_items bi

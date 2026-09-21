@@ -1,6 +1,6 @@
 let selectedreturns = [];
 
-export const startReturn = async(allActiveBorrows, conditions, refreshBorrows, refreshReturns) => {
+export const startReturn = async(allActiveBorrows, conditions, refreshBorrows, refreshReturns, refreshFines) => {
     selectedreturns = [];
 
     const myModal = new bootstrap.Modal(document.getElementById("blank-modal"), {
@@ -81,6 +81,7 @@ export const startReturn = async(allActiveBorrows, conditions, refreshBorrows, r
         if(await submitReturn() == 1){
             refreshBorrows();
             refreshReturns();
+            refreshFines();
             alert("Books successfully returned");
             myModal.hide();
         }

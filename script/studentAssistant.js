@@ -639,7 +639,7 @@ document.addEventListener('DOMContentLoaded', () => {
         startBorrow(copies, getAllBorrows);
     })
     document.getElementById('startreturn').addEventListener('click', () => {
-        startReturn(activeborrows, conditions, getAllBorrows, getAllReturns);
+        startReturn(activeborrows, conditions, getAllBorrows, getAllReturns, getAllFines);
     })
     document.getElementById('startrenew').addEventListener('click', () => {
         startRenew(activeborrows, getAllBorrows, getAllRenewals);
