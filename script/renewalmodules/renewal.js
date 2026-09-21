@@ -42,7 +42,7 @@ export const startRenew = async(allActiveBorrows, refreshBorrows, refreshRenewal
         const isOverdue = new Date(foundBorrowItem.expires_at) < new Date();
 
         if (isOverdue) {
-            resultDiv.innerHTML = `<span class="text-danger">Found: ${foundBorrowItem.book_title} (Due: ${foundBorrowItem.expires_at}) — Cannot renew: book is already overdue</span>`;
+            resultDiv.innerHTML = `<span class="text-danger">Found: ${foundBorrowItem.book_title} (Due: ${foundBorrowItem.expires_at}) - Cannot renew: book is already overdue</span>`;
             foundBorrowItem = null; //ireset para di matiwas ang confirm renewal
             return;
         }
