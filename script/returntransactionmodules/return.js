@@ -28,19 +28,19 @@ export const startReturn = async(allActiveBorrows, conditions, refreshBorrows, r
     document.getElementById("blank-main-div").innerHTML = myHtml;
 
     document.getElementById('findreturn').addEventListener('click', () => {
-        const accession = document.getElementById('returnaccession').value;
+        const accession = document.getElementById('returnaccession').value.trim();
 
         const borrow = allActiveBorrows.find(b => b.accession_number == accession && b.is_returned == 0);
 
         const resultDiv = document.getElementById('returnresult');
 
-        if(!borrow){
+        if (!borrow) {
             resultDiv.innerHTML = `<span class="text-danger">No active borrow found for this copy</span>`;
             return;
         }
 
         const alreadyAdded = selectedreturns.some(r => r.borrow_item_id == borrow.borrow_item_id);
-        if(alreadyAdded){
+        if (alreadyAdded) {
             resultDiv.innerHTML = `<span class="text-danger">This item is already in the list</span>`;
             return;
         }
@@ -58,7 +58,7 @@ export const startReturn = async(allActiveBorrows, conditions, refreshBorrows, r
         resultDiv.innerHTML = '';
         document.getElementById('returnaccession').value = "";
         renderSelectedReturns(conditions);
-    })
+    });
 
     const modalFooter = document.getElementById("blank-modal-footer");
     modalFooter.innerHTML = `
@@ -67,86 +67,82 @@ export const startReturn = async(allActiveBorrows, conditions, refreshBorrows, r
     `;
 
     modalFooter.querySelector(".confirm-return").addEventListener('click', async() => {
-        if(selectedreturns.length == 0){
+        if (selectedreturns.length == 0) {
             alert("Please add at least one item to return");
             return;
         }
 
         const missingCondition = selectedreturns.some(r => !r.condition_on_return);
-        if(missingCondition){
+        if (missingCondition) {
             alert("Please select a condition for every item");
             return;
         }
 
-        if(await submitReturn() == 1){
+        const result = await submitReturn();
+        if (result == 1) {
             refreshBorrows();
             refreshReturns();
             refreshFines();
             alert("Books successfully returned");
             myModal.hide();
+        } else {
+            alert(result || "Failed to process return");
         }
-        else{
-            alert("Failed to process return");
-        }
-    })
+    });
 
     myModal.show();
-}
+};
 
 const renderSelectedReturns = (conditions) => {
     const listDiv = document.getElementById('selectedreturnslist');
     listDiv.innerHTML = '';
 
-    selectedreturns.forEach((item, index) => {
-        const now = new Date();
-        const dueDate = new Date(item.expires_at);
-        let statusLabel = "On Time";
-        if(now > dueDate){
-            statusLabel = "Overdue";
-        }
+    selectedreturns.forEach(item => {
+        const isOverdue = new Date() > new Date(item.expires_at);
 
         const card = document.createElement('div');
         card.classList.add('border', 'rounded', 'p-2', 'mb-2');
         card.innerHTML = `
             <div class="d-flex justify-content-between align-items-center">
-                <span>${item.book_title} (${item.accession_number}) - ${item.borrower_name} - <strong>${statusLabel}</strong></span>
+                <span>${item.book_title} (${item.accession_number}) - ${item.borrower_name} - <strong>${isOverdue ? "Overdue" : "On Time"}</strong></span>
                 <button type="button" class="btn btn-sm btn-outline-danger remove">&times;</button>
             </div>
             <div class="mt-2">
-                ${buildConditionsDropdown(conditions, index)}
-                <input type="text" class="form-control form-control-sm mt-1 notesinput" data-index="${index}" placeholder="Condition notes (optional)">
+                ${buildConditionsDropdown(conditions, item.condition_on_return)}
+                <input type="text" class="form-control form-control-sm mt-1 notesinput" placeholder="Condition notes (optional)" value="${item.condition_notes || ''}">
             </div>
         `;
 
         card.querySelector('.remove').addEventListener('click', () => {
             selectedreturns = selectedreturns.filter(r => r.borrow_item_id != item.borrow_item_id);
             renderSelectedReturns(conditions);
-        })
+        });
 
         card.querySelector('.conditionselect').addEventListener('change', (e) => {
-            selectedreturns[index].condition_on_return = e.target.value;
-        })
+            item.condition_on_return = e.target.value;
+        });
 
         card.querySelector('.notesinput').addEventListener('input', (e) => {
-            selectedreturns[index].condition_notes = e.target.value;
-        })
+            item.condition_notes = e.target.value;
+        });
 
         listDiv.appendChild(card);
-    })
-}
+    });
+};
 
-const buildConditionsDropdown = (conditions, index) => {
-    let myHtml = `<select class="form-select form-select-sm conditionselect" data-index="${index}">
-    <option value="" selected disabled>Select condition on return</option>`;
+const buildConditionsDropdown = (conditions, condition_id) => {
+    let myHtml = `<select class="form-select form-select-sm conditionselect">
+        <option value="" selected disabled>Select condition on return</option>`;
 
     conditions.forEach(condition => {
-        myHtml += `<option value="${condition.condition_id}">${condition.condition_desc}</option>`;
-    })
+        let selected = condition_id == condition.condition_id ? "selected" : "";
+        myHtml += `<option value="${condition.condition_id}" ${selected}>${condition.condition_desc}</option>`;
+    });
 
     myHtml += `</select>`;
 
     return myHtml;
-}
+};
 
 const submitReturn = async() => {
     const jsondata = {
@@ -168,8 +164,8 @@ const submitReturn = async() => {
         url: `${sessionStorage.url}/returntransactions.php`,
         method: "POST",
         data: formData
-    })
+    });
 
     console.log(response.data);
     return response.data;
-}
+};
