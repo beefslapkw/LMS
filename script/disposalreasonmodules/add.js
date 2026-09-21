@@ -4,7 +4,7 @@ export const addDisposalReason = async(refreshDisplay) => {
         backdrop: "static",
     });
 
-    document.getElementById("blank-modal-title").innerText = "Add DisposalReason";
+    document.getElementById("blank-modal-title").innerText = "Add Disposal Reason";
 
     let myHtml = `
         <table class="table table-sm">
