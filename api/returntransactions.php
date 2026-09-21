@@ -15,14 +15,14 @@
                         borrower.user_id AS borrower_id, borrower.first_name AS borrower_first_name, borrower.last_name AS borrower_last_name,
                         receiver.first_name AS received_by_first_name, receiver.last_name AS received_by_last_name
                 FROM return_items ri
-                INNER JOIN return_transactions rt ON ri.return_transaction_id = rt.return_transaction_id
-                INNER JOIN borrow_items bi ON ri.borrow_item_id = bi.borrow_item_id
-                INNER JOIN borrow_transactions bt ON bi.transaction_id = bt.transaction_id
-                INNER JOIN book_copies bc ON bi.copy_id = bc.copy_id
-                INNER JOIN books b ON bc.book_id = b.book_id
-                INNER JOIN conditions c ON ri.condition_on_return = c.condition_id
-                INNER JOIN users borrower ON bt.borrower_id = borrower.user_id
-                INNER JOIN users receiver ON rt.received_by = receiver.user_id
+                INNER JOIN return_transactions rt ON ri.return_transaction_id=rt.return_transaction_id
+                INNER JOIN borrow_items bi ON ri.borrow_item_id=bi.borrow_item_id
+                INNER JOIN borrow_transactions bt ON bi.transaction_id=bt.transaction_id
+                INNER JOIN book_copies bc ON bi.copy_id=bc.copy_id
+                INNER JOIN books b ON bc.book_id=b.book_id
+                INNER JOIN conditions c ON ri.condition_on_return=c.condition_id
+                INNER JOIN users borrower ON bt.borrower_id=borrower.user_id
+                INNER JOIN users receiver ON rt.received_by=receiver.user_id
                 ORDER BY rt.returned_at DESC";
             $stmt = $conn->prepare($sql);
             $stmt->execute();

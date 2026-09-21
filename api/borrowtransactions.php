@@ -13,11 +13,11 @@
                         borrower.user_id AS borrower_id, borrower.first_name AS borrower_first_name, borrower.last_name AS borrower_last_name,
                         processor.first_name AS processed_by_first_name, processor.last_name AS processed_by_last_name
                 FROM borrow_items bi
-                INNER JOIN borrow_transactions bt ON bi.transaction_id = bt.transaction_id
-                INNER JOIN book_copies bc ON bi.copy_id = bc.copy_id
-                INNER JOIN books b ON bc.book_id = b.book_id
-                INNER JOIN users borrower ON bt.borrower_id = borrower.user_id
-                INNER JOIN users processor ON bt.processed_by = processor.user_id
+                INNER JOIN borrow_transactions bt ON bi.transaction_id=bt.transaction_id
+                INNER JOIN book_copies bc ON bi.copy_id=bc.copy_id
+                INNER JOIN books b ON bc.book_id=b.book_id
+                INNER JOIN users borrower ON bt.borrower_id=borrower.user_id
+                INNER JOIN users processor ON bt.processed_by=processor.user_id
                 ORDER BY bt.borrowed_at DESC";
             $stmt = $conn->prepare($sql);
             $stmt->execute();
@@ -38,9 +38,9 @@
 
                 $sqlFineCheck = "SELECT COUNT(*) AS unpaidCount
                         FROM fine_records fr
-                        INNER JOIN borrow_items bi ON fr.borrow_item_id = bi.borrow_item_id
-                        INNER JOIN borrow_transactions bt ON bi.transaction_id = bt.transaction_id
-                        WHERE bt.borrower_id = :borrower_id AND fr.is_paid = 0";
+                        INNER JOIN borrow_items bi ON fr.borrow_item_id=bi.borrow_item_id
+                        INNER JOIN borrow_transactions bt ON bi.transaction_id=bt.transaction_id
+                        WHERE bt.borrower_id=:borrower_id AND fr.is_paid=0";
                 $stmtFineCheck = $conn->prepare($sqlFineCheck);
                 $stmtFineCheck->bindParam(":borrower_id", $header['borrower_id']);
                 $stmtFineCheck->execute();
@@ -53,11 +53,11 @@
         
                 $sqlRole = "SELECT r.role_type,
                                 (SELECT COUNT(*) FROM borrow_items bi
-                                INNER JOIN borrow_transactions bt ON bi.transaction_id = bt.transaction_id
+                                INNER JOIN borrow_transactions bt ON bi.transaction_id=bt.transaction_id
                                 WHERE bt.borrower_id = :user_id AND bi.is_returned = 0) AS activeCount
                             FROM users u
                             INNER JOIN roles r ON u.role_id = r.role_id
-                            WHERE u.user_id = :user_id";
+                            WHERE u.user_id=:user_id";
                 $stmtRole = $conn->prepare($sqlRole);
                 $stmtRole->bindParam(":user_id", $header['borrower_id']);
                 $stmtRole->execute();
@@ -79,9 +79,9 @@
         
                 $sqlCopy = "SELECT c.category_type, bc.status_id
                         FROM book_copies bc
-                        INNER JOIN books b ON bc.book_id = b.book_id
-                        INNER JOIN categories c ON b.category_id = c.category_id
-                        WHERE bc.copy_id = :copy_id";
+                        INNER JOIN books b ON bc.book_id=b.book_id
+                        INNER JOIN categories c ON b.category_id=c.category_id
+                        WHERE bc.copy_id=:copy_id";
                 $stmtCopy = $conn->prepare($sqlCopy);
         
                 $sqlStatus = "UPDATE book_copies SET status_id=2 WHERE copy_id=:copy_id"; 
