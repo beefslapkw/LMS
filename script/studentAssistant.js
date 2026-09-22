@@ -1,11 +1,13 @@
 import { startBorrow } from "./borrowtransactionmodules/borrow.js";
 import { startReturn } from "./returntransactionmodules/return.js";
 import { startRenew } from "./renewalmodules/renewal.js";
+
 import { addBook } from "./bookmodules/add.js";
 import { viewBook } from "./bookmodules/view.js";
 import { updateBook } from "./bookmodules/update.js";
 import { deactivateBook } from "./bookmodules/deactivate.js";
 import { reactivateBook } from "./bookmodules/reactivate.js";
+
 import { addCopy } from "./bookcopymodules/add.js";
 import { viewCopy } from "./bookcopymodules/view.js";
 import { updateCopy } from "./bookcopymodules/update.js";
@@ -635,6 +637,7 @@ document.addEventListener('DOMContentLoaded', () => {
     getAllReturns();
     getAllRenewals();
     getAllFines();
+    
     document.getElementById('startborrow').addEventListener('click', () => {
         startBorrow(copies, getAllBorrows);
     })

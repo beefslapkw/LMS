@@ -28,7 +28,10 @@
 
         <ul class="nav nav-tabs mb-3">
             <li class="nav-item">
-                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#users-tab" type="button">Users</button>
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#transactions-tab" type="button">Borrow / Return</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#users-tab" type="button">Users</button>
             </li>
             <li class="nav-item">
                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#books-tab" type="button">Books</button>
@@ -66,7 +69,59 @@
         </ul>
 
         <div class="tab-content">
-            <div class="tab-pane fade show active" id="users-tab">
+            <div class="tab-pane fade show active" id="transactions-tab">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="card p-3 shadow-sm">
+                            <h5>Borrow a Book</h5>
+                            <button type="button" class="btn btn-success btn-sm w-100 mt-2" id="startborrow">+ New Borrow</button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card p-3 shadow-sm">
+                            <h5>Return a Book</h5>
+                            <button type="button" class="btn btn-primary btn-sm w-100 mt-2" id="startreturn">+ New Return</button>
+                        </div>
+                    </div>
+                </div>
+                <hr class="my-4">
+
+                <ul class="nav nav-pills mb-3" id="recordsnav">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#borrows-record" type="button">Borrows</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#returns-record" type="button">Returns</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#renewals-record" type="button">Renewals</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#fines-record" type="button">Fines</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="borrows-record">
+                        <div id="borrowstablediv"></div> <br>
+                    </div>
+                    <div class="tab-pane fade" id="returns-record">
+                        <div id="returnstablediv"></div> <br>
+                    </div>
+                    <div class="tab-pane fade" id="renewals-record">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span></span>
+                            <button type="button" class="btn btn-success btn-sm" id="startrenew">+ New Renewal</button>
+                        </div>
+                        <div id="renewalstablediv"></div> <br>
+                    </div>
+                    <div class="tab-pane fade" id="fines-record">
+                        <div id="finestablediv"></div> <br>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="users-tab">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h2>Users List</h2>
                 </div>
