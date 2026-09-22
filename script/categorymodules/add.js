@@ -14,6 +14,12 @@ export const addCategory = async(refreshDisplay) => {
                     <input type="text" id="category_type" class="form-control" placeholder="ex: Fictional">
                 </td>
             </tr>
+            <tr>
+                <td>Borrow Duration (days)</td>
+                <td>
+                    <input type="number" id="borrow_duration" class="form-control">
+                </td>
+            </tr>
         </table>
     `;
     document.getElementById("blank-main-div").innerHTML = myHtml;   
@@ -41,7 +47,8 @@ export const addCategory = async(refreshDisplay) => {
 
 const addCategoryDetails = async() => {
     const jsondata = {
-        category_type: document.getElementById('category_type').value
+        category_type: document.getElementById('category_type').value,
+        borrow_duration: Number(document.getElementById('borrow_duration').value)
     };
 
     const formData = new FormData();

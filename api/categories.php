@@ -18,9 +18,10 @@
 
             $json = json_decode($json, true);
 
-            $sql = "INSERT INTO categories(category_type) VALUES(:category_type)";
+            $sql = "INSERT INTO categories(category_type, borrow_duration) VALUES(:category_type, :borrow_duration)";
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(":category_type", $json['category_type']);
+            $stmt->bindParam(":borrow_duration", $json['borrow_duration']);
             $stmt->execute();
             $returnValue = 0;
 
@@ -48,11 +49,12 @@
 
             $json = json_decode($json, true);
 
-            $sql = "UPDATE categories SET category_type=:category_type 
+            $sql = "UPDATE categories SET category_type=:category_type, borrow_duration=:borrow_duration 
             WHERE category_id=:category_id";
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(":category_id", $json['category_id']);
             $stmt->bindParam(":category_type", $json['category_type']);
+            $stmt->bindParam(":borrow_duration", $json['borrow_duration']);
             $stmt->execute();
             $returnValue = 0;
 

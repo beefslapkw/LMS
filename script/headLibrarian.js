@@ -762,6 +762,7 @@ const getAllCategories = async() => {
     thead.innerHTML = `
     <tr>
         <th>Category Type</th>
+        <th>Borrow Duration</th>
         <th>Action</th>
     </tr>
     `;
@@ -776,6 +777,7 @@ const getAllCategories = async() => {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${category.category_type}</td>
+                <td>${category.borrow_duration + " days"}</td>
                 <td>
                     <button class="btn btn-secondary btn-sm view">View</button>
                     <button class="btn btn-success btn-sm update">Update</button>

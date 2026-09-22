@@ -11,6 +11,12 @@ export const viewCategory = async(category_id) => {
                     ${category.category_type}
                 </td>
             </tr>
+            <tr>
+                <td>Borrow Duration</td>
+                <td>
+                    ${category.borrow_duration + " days"}
+                </td>
+            </tr>
         </table>
     `;
 
@@ -22,8 +28,8 @@ export const viewCategory = async(category_id) => {
 
     const myModal = new bootstrap.Modal(document.getElementById("blank-modal"), {
         keyboard: true,
-            backdrop: "static",
-        });
+        backdrop: "static",
+    });
 
     myModal.show();
 }
