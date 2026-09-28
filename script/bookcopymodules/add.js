@@ -1,4 +1,8 @@
+let selectedBookId = null;
+
 export const addCopy = async(refreshDisplay) => {
+    selectedBookId = null;
+
     const myModal = new bootstrap.Modal(document.getElementById("blank-modal"), {
         keyboard: true,
         backdrop: "static",
@@ -11,7 +15,9 @@ export const addCopy = async(refreshDisplay) => {
             <tr>   
                 <td>Book Title</td>
                 <td>
-                    ${await getAllBooks()}
+                    <input type="text" id="booksearch" class="form-control mb-1" placeholder="Search book title...">
+                    <div id="booklist" class="list-group" style="max-height: 180px; overflow-y: auto;"></div>
+                    <div id="selectedbook" class="form-text"></div>
                 </td>
             </tr>
             <tr>
@@ -22,7 +28,14 @@ export const addCopy = async(refreshDisplay) => {
             </tr>
         </table>
     `;
-    document.getElementById("blank-main-div").innerHTML = myHtml;   
+    document.getElementById("blank-main-div").innerHTML = myHtml;
+    searchBooks("");
+
+    let searchTimer;
+    document.getElementById('booksearch').addEventListener('input', (e) => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => searchBooks(e.target.value), 300);
+    });   
 
     const modalFooter = document.getElementById("blank-modal-footer");
     myHtml = `
@@ -32,6 +45,17 @@ export const addCopy = async(refreshDisplay) => {
     modalFooter.innerHTML = myHtml;
 
     modalFooter.querySelector(".add").addEventListener('click', async() => {
+        const qty = Number(document.getElementById('qty').value);
+
+        if(!selectedBookId){
+            alert("Please select a book");
+            return;
+        }
+        if(!Number.isInteger(qty) || qty < 1){
+            alert("Please enter a valid amount of copies");
+            return;
+        }
+
         if(await addCopyDetails() > 0){
             refreshDisplay();
             alert("Successfully added book copies");
@@ -45,28 +69,50 @@ export const addCopy = async(refreshDisplay) => {
     myModal.show();
 }
 
-const getAllBooks = async() => {
-    const response = await axios.get(`${sessionStorage.url}/books.php`,{
-        params:{operation: "getAllBooks"}
-    })
+const searchBooks = async(term) => {
+    const list = document.getElementById('booklist');
 
-    let myHtml = `<select id="book" class="form-select">
-    <option value="" selected disabled>Select Book</option>
-    `;
+    try{
+        const response = await axios.get(`${sessionStorage.url}/books.php`, {
+            params: {operation: "getBookOptions", json: JSON.stringify({search: term})}
+        });
 
-    console.log(response.data);
-    response.data.forEach(book => {
-        myHtml+=`<option value="${book.book_id}">${book.book_title}</option>`;
-    })
+        list.innerHTML = '';
 
-    myHtml+=`</select>`;
+        if(!Array.isArray(response.data) || response.data.length == 0){
+            list.innerHTML = `<div class="list-group-item text-muted">No books found</div>`;
+            return;
+        }
 
-    return myHtml;
-}
+        response.data.forEach(book => {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.classList.add('list-group-item', 'list-group-item-action');
+            //ikeep ang selection bisan mag search utro
+            if(book.book_id == selectedBookId){
+                item.classList.add('active');
+            }
+            item.textContent = book.book_title;
+
+            item.addEventListener('click', () => {
+                selectedBookId = book.book_id;
+                document.getElementById('selectedbook').textContent = `Selected: ${book.book_title}`;
+                list.querySelectorAll('.list-group-item').forEach(el => el.classList.remove('active'));
+                item.classList.add('active');
+            });
+
+            list.appendChild(item);
+        });
+    }
+    catch(err){
+        console.error(err);
+        list.innerHTML = `<div class="list-group-item text-danger">Failed to load books</div>`;
+    }
+};
 
 const addCopyDetails = async() => {
     const jsondata = {
-        book_id: document.getElementById('book').value,
+        book_id: selectedBookId,
         qty: Number(document.getElementById('qty').value),
         added_by: `${sessionStorage.userId}`
     };
@@ -84,41 +130,3 @@ const addCopyDetails = async() => {
     console.log(response.data);
     return response.data;
 }
-
-// const getAllConditions = async() => {
-//     const response = await axios.get(`${sessionStorage.url}/conditions.php`,{
-//         params:{operation: "getAllConditions"}
-//     })
-
-//     let myHtml = `<select id="condition" class="form-select">
-//     <option value="" selected disabled>Set Copy Condition</option>
-//     `;
-
-//     console.log(response.data);
-//     response.data.forEach(condition => {
-//         myHtml+=`<option value="${condition.condition_id}">${condition.condition_desc}</option>`;
-//     })
-
-//     myHtml+=`</select>`;
-
-//     return myHtml;
-// }
-
-// const getAllStatuses = async() => {
-//     const response = await axios.get(`${sessionStorage.url}/statuses.php`,{
-//         params:{operation: "getAllStatuses"}
-//     })
-
-//     let myHtml = `<select id="status" class="form-select">
-//     <option value="" selected disabled>Set Copy Status</option>
-//     `;
-
-//     console.log(response.data);
-//     response.data.forEach(status => {
-//         myHtml+=`<option value="${status.status_id}">${status.status_desc}</option>`;
-//     })
-
-//     myHtml+=`</select>`;
-
-//     return myHtml;
-// }

@@ -26,7 +26,6 @@
 
             return json_encode($rs);
         }
-
         function addRenewal($json){
             include "connection.php";
 
@@ -44,7 +43,8 @@
                                 (bi.expires_at < NOW()) AS is_overdue,
                                 bt.borrower_id,
                                 r.role_type, 
-                                c.category_type
+                                c.category_type,
+                                c.borrow_duration
                             FROM borrow_items bi
                             INNER JOIN borrow_transactions bt ON bi.transaction_id=bt.transaction_id
                             INNER JOIN users u ON bt.borrower_id=u.user_id
@@ -91,19 +91,20 @@
 
                 //extend ang duration based sa category ug role, basically pareha sa borrow
                 if($itemInfo['role_type'] == "Faculty"){
-                    $sqlUpdate = "UPDATE borrow_items SET expires_at = DATE_ADD(expires_at, INTERVAL 3 MONTH)
-                                WHERE borrow_item_id=:borrow_item_id";
-                }
-                elseif($itemInfo['category_type'] == "Educational"){
-                    $sqlUpdate = "UPDATE borrow_items SET expires_at = DATE_ADD(expires_at, INTERVAL 3 DAY)
-                                WHERE borrow_item_id=:borrow_item_id";
+                    $stmtUpdate = $conn->prepare("UPDATE borrow_items SET expires_at = DATE_ADD(expires_at, INTERVAL 3 MONTH)
+                                                WHERE borrow_item_id=:borrow_item_id");
                 }
                 else{
-                    $sqlUpdate = "UPDATE borrow_items SET expires_at = DATE_ADD(expires_at, INTERVAL 7 DAY)
-                                WHERE borrow_item_id=:borrow_item_id";
+                    $duration = (int)$itemInfo['borrow_duration'];
+                    if($duration <= 0){
+                        $conn->rollBack();
+                        return json_encode("This book's category has no borrow duration set");
+                    }
+                    $stmtUpdate = $conn->prepare("UPDATE borrow_items SET expires_at = DATE_ADD(expires_at, INTERVAL :duration DAY)
+                                                WHERE borrow_item_id=:borrow_item_id");
+                    $stmtUpdate->bindValue(":duration", $duration, PDO::PARAM_INT);
                 }
-                $stmtUpdate = $conn->prepare($sqlUpdate);
-                $stmtUpdate->bindParam(":borrow_item_id", $borrowItemId);
+                $stmtUpdate->bindValue(":borrow_item_id", $borrowItemId);
                 $stmtUpdate->execute();
 
                 //kwaon utro ang bag o nga due date para sa records

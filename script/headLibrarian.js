@@ -243,6 +243,7 @@ const getAllConditions = async() => {
     const tbody = document.createElement('tbody');
 
     if(response.status == 200){
+        conditions = [];
         console.log(response.data);
         response.data.forEach(condition => {
             conditions.push(condition);
@@ -293,6 +294,7 @@ const getAllDisposalReasons = async() => {
     const tbody = document.createElement('tbody');
 
     if(response.status == 200){
+        disposalreasons = [];
         console.log(response.data);
         response.data.forEach(reason => {
             disposalreasons.push(reason);
@@ -413,11 +415,52 @@ const getAllUsers = async() => {
     }
 }
 
-const getAllBooks = async() => {
+const renderPagination = (container, curPage, totalPages, goTo) => {
+    if(totalPages <= 1) return;
+
+    const pagination = document.createElement('div');
+    pagination.classList.add('d-flex', 'justify-content-center', 'gap-2', 'mt-2');
+
+    const addBtn = (label, page, active = false, disabled = false) => {
+        const btn = document.createElement('button');
+        btn.textContent = label;
+        btn.className = active ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline-secondary';
+        btn.disabled = disabled;
+        btn.addEventListener('click', () => goTo(page));
+        pagination.appendChild(btn);
+    };
+
+    addBtn('Prev', curPage - 1, false, curPage <= 1);
+
+    const start = Math.max(1, curPage - 2);
+    const end = Math.min(totalPages, curPage + 2);
+
+    if(start > 1){
+        addBtn('1', 1);
+        if(start > 2) addBtn('...', curPage, false, true);
+    }
+    for(let i = start; i <= end; i++){
+        addBtn(i, i, i === curPage);
+    }
+    if(end < totalPages){
+        if(end < totalPages - 1) addBtn('...', curPage, false, true);
+        addBtn(totalPages, totalPages);
+    }
+
+    addBtn('Next', curPage + 1, false, curPage >= totalPages);
+
+    container.appendChild(pagination);
+};
+
+let currentBooksPage = 1;
+const booksPerPage = 10;
+
+const getAllBooks = async(page = 1) => {
+    currentBooksPage = page;
     const bookstablediv = document.getElementById('bookstablediv');
 
     const response = await axios.get(`${url}/books.php`,{
-        params:{operation:"getAllBooks"}
+        params:{operation:"getAllBooks", json: JSON.stringify({ page: page, limit: booksPerPage })}
     })
 
     bookstablediv.innerHTML = '';
@@ -447,10 +490,10 @@ const getAllBooks = async() => {
         document.getElementById('bookscard').innerHTML = `
             <div class="card text-white shadow-sm p-3" style="background-color: #006666;">
                 <small class="text-uppercase fw-semibold">Total Books Quantity</small>
-                <h2 class="display-6 fw-bold my-2 text-center">${response.data.length}</h2>
+                <h2 class="display-6 fw-bold my-2 text-center">${response.data.total}</h2>
             </div>
         `;
-        response.data.forEach(book => { 
+        response.data.data.forEach(book => { 
             let status;
             let statusButtons;
             if(book.is_active == 1){
@@ -483,37 +526,46 @@ const getAllBooks = async() => {
             row.querySelector(".view").addEventListener('click', () => {
                 viewBook(book.book_id);
             })
+
+            //mabalik sa current page imbes page 1
             row.querySelector(".update").addEventListener('click', () => {
-                updateBook(book.book_id, authors, categories, genres, publishers, getAllBooks);
+                updateBook(book.book_id, authors, categories, genres, publishers, () => getAllBooks(currentBooksPage));
             })
             
             const deactivateBtn = row.querySelector(".deactivate");
             if(deactivateBtn){
                 deactivateBtn.addEventListener('click', () => {
-                    deactivateBook(book.book_id, getAllBooks);
+                    deactivateBook(book.book_id, () => getAllBooks(currentBooksPage));
                 })
             }
             
             const reactivateBtn = row.querySelector(".reactivate");
             if(reactivateBtn){
                 reactivateBtn.addEventListener('click', () => {
-                    reactivateBook(book.book_id, getAllBooks);
+                    reactivateBook(book.book_id, () => getAllBooks(currentBooksPage));
                 })
             }
         })
         table.appendChild(tbody);
         bookstablediv.appendChild(table);
+
+        //windowed pager (ilisan ang tibuok pagination block)
+        renderPagination(bookstablediv, response.data.page, response.data.totalPages, getAllBooks);
     }
     else{
         alert("ERROR");
     }
 }
 
-const getAllCopies = async() => {
+let currentCopiesPage = 1;
+const copiesPerPage = 10;
+
+const getAllCopies = async(page = 1) => {
+    currentCopiesPage = page;
     const copiestablediv = document.getElementById('copiestablediv');
 
     const response = await axios.get(`${url}/bookcopies.php`,{
-        params:{operation:"getAllCopies"}
+        params:{operation:"getAllCopies", json: JSON.stringify({ page: page, limit: copiesPerPage })}
     })
 
     copiestablediv.innerHTML = '';
@@ -541,11 +593,10 @@ const getAllCopies = async() => {
         document.getElementById('copiescard').innerHTML = `
             <div class="card text-white shadow-sm p-3" style="background-color: #00a8a8;">
                 <small class="text-uppercase fw-semibold">Total Book Copies Quantity</small>
-                <h2 class="display-6 fw-bold my-2 text-center">${response.data.length}</h2>
+                <h2 class="display-6 fw-bold my-2 text-center">${response.data.total}</h2>
             </div>
         `;
-        response.data.forEach(copy => { 
-            copies.push(copy);
+        response.data.data.forEach(copy => { 
             let condition;
             if(!copy.condition_notes){
                 condition = "N/A";
@@ -573,15 +624,20 @@ const getAllCopies = async() => {
             row.querySelector(".view").addEventListener('click', () => {
                 viewCopy(copy.copy_id);
             })
+
+            //mabalik sa current page imbes page 1
             row.querySelector(".update").addEventListener('click', () => {
-                updateCopy(copy.copy_id, conditions, getAllCopies);
+                updateCopy(copy.copy_id, conditions, () => getAllCopies(currentCopiesPage));
             })
             row.querySelector(".dispose").addEventListener('click', () => {
-                disposeCopy(copy.copy_id, disposalreasons, 3, getAllCopies);
+                disposeCopy(copy.copy_id, disposalreasons, 3, () => getAllCopies(currentCopiesPage));
             })
         })
         table.appendChild(tbody);
         copiestablediv.appendChild(table);
+
+        //windowed pager (ilisan ang tibuok pagination block)
+        renderPagination(copiestablediv, response.data.page, response.data.totalPages, getAllCopies);
     }
     else{
         alert("ERROR");
@@ -601,7 +657,6 @@ const getAllAuthors = async() => {
     const thead = document.createElement('thead');
     thead.innerHTML = `
         <tr>
-            <th>Author ID</th>
             <th>Author Name</th>
             <th>Actions</th>
         </tr>
@@ -611,6 +666,7 @@ const getAllAuthors = async() => {
     const tbody = document.createElement('tbody');
 
     if(response.status == 200){
+        authors = [];
         console.log(response.data);
         document.getElementById('authorscard').innerHTML = `
             <div class="card text-white shadow-sm p-3" style="background-color: #e68a00;">
@@ -622,7 +678,6 @@ const getAllAuthors = async() => {
             authors.push(author);
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${author.author_id}</td>
                 <td>${author.author_name}</td>
                 <td>
                     <button class="btn btn-secondary btn-sm view">View</button>
@@ -659,7 +714,6 @@ const getAllPublishers = async() => {
     const thead = document.createElement('thead');
     thead.innerHTML = `
         <tr>
-            <th>Publisher ID</th>
             <th>Publisher Name</th>
         </tr>
     `;
@@ -668,12 +722,12 @@ const getAllPublishers = async() => {
     const tbody = document.createElement('tbody');
 
     if(response.status == 200){
+        publishers = [];
         console.log(response.data);
         response.data.forEach(publisher => { 
             publishers.push(publisher);
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${publisher.publisher_id}</td>
                 <td>${publisher.publisher_name}</td>
                 <td>
                     <button class="btn btn-secondary btn-sm view">View</button>
@@ -771,6 +825,7 @@ const getAllCategories = async() => {
     const tbody = document.createElement('tbody');
 
     if(response.status == 200){
+        categories = [];
         console.log(response.data); 
         response.data.forEach(category => {
             categories.push(category);
@@ -1070,38 +1125,39 @@ const payFineDetails = async(fine_id) => {
     return response.data;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    getAllDepartments();
-    getAllRoles();
-    getAllUsers();
-    getAllBooks();
-    getAllCopies();
-    getAllAuthors();
-    getAllPublishers();
-    getAllGenres();
-    getAllCategories();
-    getAllStatuses();
-    getAllConditions();
-    getAllDisposalReasons();
-    getAllBorrows();
-    getAllReturns();
-    getAllRenewals();
-    getAllFines();
+document.addEventListener('DOMContentLoaded', async() => {
+    await Promise.all([
+        getAllDepartments(),
+        getAllRoles(),
+        getAllAuthors(),
+        getAllPublishers(),
+        getAllGenres(),
+        getAllCategories(),
+        getAllStatuses(),
+        getAllConditions(),
+        getAllDisposalReasons()
+    ]);
 
     document.getElementById('startborrow').addEventListener('click', () => {
-        startBorrow(copies, getAllBorrows);
+        startBorrow(() => {
+            getAllBorrows();
+            getAllCopies(currentCopiesPage);
+        });
     })
     document.getElementById('startreturn').addEventListener('click', () => {
-        startReturn(activeborrows, conditions, getAllBorrows, getAllReturns, getAllFines);
+        startReturn(activeborrows, conditions, () => {
+            getAllBorrows();
+            getAllCopies(currentCopiesPage);
+        }, getAllReturns, getAllFines);
     })
     document.getElementById('startrenew').addEventListener('click', () => {
         startRenew(activeborrows, getAllBorrows, getAllRenewals);
     })
     document.getElementById('addbook').addEventListener('click', () => {
-        addBook(authors, categories, genres, publishers, getAllBooks);
+        addBook(authors, categories, genres, publishers, () => getAllBooks(currentBooksPage));
     })
     document.getElementById('addcopy').addEventListener('click', () => {
-        addCopy(getAllCopies);
+        addCopy(() => getAllCopies(currentCopiesPage));
     })
     document.getElementById('addcategory').addEventListener('click', () => {
         addCategory(getAllCategories);
@@ -1130,4 +1186,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('adddisposalreason').addEventListener('click', () => {
         addDisposalReason(getAllDisposalReasons);
     })
+
+    getAllUsers();
+    getAllBooks();
+    getAllCopies();
+    getAllBorrows();
+    getAllReturns();
+    getAllRenewals();
+    getAllFines();
 })

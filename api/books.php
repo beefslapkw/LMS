@@ -3,8 +3,19 @@
     header("Access-Control-Allow-Origin: *");
 
     class Book{
-        function getAllBooks(){
+        function getAllBooks($json){
             include "connection.php";
+
+            $json = json_decode($json, true);
+
+            $page  = isset($json['page']) ? max(1, (int)$json['page']) : 1;
+            $limit = isset($json['limit']) ? min(100, max(1, (int)$json['limit'])) : 10;
+            $offset = ($page - 1) * $limit;
+
+            $sqlCount = "SELECT COUNT(*) FROM books";
+            $stmtCount = $conn->prepare($sqlCount);
+            $stmtCount->execute();
+            $totalRows = (int)$stmtCount->fetchColumn();
 
             $sql = "SELECT b.*,
                         c.category_type, g.genre_name, p.publisher_name,
@@ -18,12 +29,21 @@
                     LEFT JOIN book_authors ba ON b.book_id = ba.book_id
                     LEFT JOIN authors a ON ba.author_id = a.author_id
                     GROUP BY b.book_id
-                    ORDER BY b.shelf_location";
+                    ORDER BY b.shelf_location, b.book_id
+                    LIMIT :limit OFFSET :offset";
             $stmt = $conn->prepare($sql);
+            $stmt->bindParam(":limit", $limit, PDO::PARAM_INT);
+            $stmt->bindParam(":offset", $offset, PDO::PARAM_INT);
             $stmt->execute();
             $rs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            return json_encode($rs);
+            return json_encode([
+                "data" => $rs,
+                "total" => $totalRows,
+                "page" => $page,
+                "limit" => $limit,
+                "totalPages" => (int)ceil($totalRows / $limit)
+            ]);
         }
         function addBook($json){
             include "connection.php";
@@ -202,6 +222,22 @@
 
             return json_encode($returnValue);
         }
+        function getBookOptions($json){
+            include "connection.php";
+
+            $json = json_decode($json, true);
+            $search = isset($json['search']) ? trim($json['search']) : "";
+
+            $sql = "SELECT book_id, book_title FROM books
+                    WHERE is_active=1 AND book_title LIKE :search
+                    ORDER BY book_title
+                    LIMIT 20";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindValue(":search", "%" . $search . "%");
+            $stmt->execute();
+
+            return json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+        }
     }
 
     if($_SERVER['REQUEST_METHOD'] == 'GET'){
@@ -216,7 +252,7 @@
     $book = new Book();
     switch($operation){
         case "getAllBooks":
-            echo $book->getAllBooks();
+            echo $book->getAllBooks($json);
             break;
         case "addBook":
             echo $book->addBook($json);
@@ -232,6 +268,9 @@
             break;
         case "reactivateBook":
             echo $book->reactivateBook($json);
+            break;
+        case "getBookOptions":
+            echo $book->getBookOptions($json);
             break;
     }
 ?>

@@ -1,7 +1,7 @@
 let foundUser = null;
 let selectedcopies = [];
 
-export const startBorrow = async(allCopies, refreshDisplay) => {
+export const startBorrow = async(refreshDisplay) => {
     foundUser = null;
     selectedcopies = [];
 
@@ -58,7 +58,7 @@ export const startBorrow = async(allCopies, refreshDisplay) => {
         }
     })
 
-    document.getElementById('findcopy').addEventListener('click', () => {
+    document.getElementById('findcopy').addEventListener('click', async() => {
         if(!foundUser){
             alert("Please find a borrower first");
             return;
@@ -74,12 +74,18 @@ export const startBorrow = async(allCopies, refreshDisplay) => {
             return;
         }
 
-        const accession = document.getElementById('copyaccession').value;
-        const copy = allCopies.find(c => c.accession_number == accession && c.status_desc == "Available");
-
+        const accession = document.getElementById('copyaccession').value.trim();
         const resultDiv = document.getElementById('copyresult');
 
-        if(!copy){
+        if(!accession){
+            resultDiv.innerHTML = `<span class="text-danger">Please enter an accession number</span>`;
+            return;
+        }
+
+        //kwaon ang copy gikan sa server kay pagination na, di na kompleto ang list sa frontend
+        const copy = await findCopyByAccession(accession);
+
+        if(!copy || copy.status_desc != "Available"){
             resultDiv.innerHTML = `<span class="text-danger">Copy not found or unavailable</span>`;
             return;
         }
@@ -152,6 +158,20 @@ const findUserByIdNumber = async(idnum) => {
     }
 
     const response = await axios.get(`${sessionStorage.url}/users.php`,{
+        params: params
+    })
+
+    console.log(response.data);
+    return response.data;
+}
+
+const findCopyByAccession = async(accession) => {
+    const params = {
+        operation: "getCopyByAccession",
+        json: JSON.stringify({accession_number: accession})
+    }
+
+    const response = await axios.get(`${sessionStorage.url}/bookcopies.php`,{
         params: params
     })
 

@@ -3,25 +3,46 @@
     header("Access-Control-Allow-Origin: *");
 
     class BookCopy{
-        function getAllCopies(){
+        function getAllCopies($json){
             include "connection.php";
 
+            $json = json_decode($json, true);
+
+            $page  = isset($json['page']) ? max(1, (int)$json['page']) : 1;
+            $limit = isset($json['limit']) ? min(100, max(1, (int)$json['limit'])) : 10;
+            $offset = ($page - 1) * $limit;
+
+            //total count para sa ibuild nga pages sa frontend
+            $sqlCount = "SELECT COUNT(*) FROM book_copies";
+            $stmtCount = $conn->prepare($sqlCount);
+            $stmtCount->execute();
+            $totalRows = (int)$stmtCount->fetchColumn();
+
             $sql = "SELECT bc.copy_id, bc.accession_number, bc.condition_notes, bc.added_at,
-                    b.book_title,
-                    s.status_desc,
-                    c.condition_desc,
-                    u.first_name, u.last_name
-                FROM book_copies bc
-                INNER JOIN books b ON bc.book_id = b.book_id
-                INNER JOIN statuses s ON bc.status_id = s.status_id
-                INNER JOIN conditions c ON bc.condition_id = c.condition_id
-                INNER JOIN users u ON bc.added_by = u.user_id
-                ORDER BY bc.accession_number";
+                        b.book_title,
+                        s.status_desc,
+                        c.condition_desc,
+                        u.first_name, u.last_name
+                    FROM book_copies bc
+                    INNER JOIN books b ON bc.book_id = b.book_id
+                    INNER JOIN statuses s ON bc.status_id = s.status_id
+                    INNER JOIN conditions c ON bc.condition_id = c.condition_id
+                    INNER JOIN users u ON bc.added_by = u.user_id
+                    ORDER BY bc.accession_number
+                    LIMIT :limit OFFSET :offset";
             $stmt = $conn->prepare($sql);
+            $stmt->bindParam(":limit", $limit, PDO::PARAM_INT);
+            $stmt->bindParam(":offset", $offset, PDO::PARAM_INT);
             $stmt->execute();
             $rs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            return json_encode($rs);
+            return json_encode([
+                "data" => $rs,
+                "total" => $totalRows,
+                "page" => $page,
+                "limit" => $limit,
+                "totalPages" => (int)ceil($totalRows / $limit)
+            ]);
         }
         function addCopy($json){
             include "connection.php";
@@ -132,6 +153,22 @@
 
             return json_encode($returnValue);
         }
+        function getCopyByAccession($json){
+            include "connection.php";
+
+            $json = json_decode($json, true);
+
+            $sql = "SELECT bc.copy_id, bc.accession_number, b.book_title, s.status_desc
+                    FROM book_copies bc
+                    INNER JOIN books b ON bc.book_id = b.book_id
+                    INNER JOIN statuses s ON bc.status_id = s.status_id
+                    WHERE bc.accession_number=:accession_number";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindValue(":accession_number", $json['accession_number']);
+            $stmt->execute();
+
+            return json_encode($stmt->fetch(PDO::FETCH_ASSOC));
+        }
     }
 
     if($_SERVER['REQUEST_METHOD'] == 'GET'){
@@ -146,7 +183,7 @@
     $bookcopy = new BookCopy();
     switch($operation){
         case "getAllCopies":
-            echo $bookcopy->getAllCopies();
+            echo $bookcopy->getAllCopies($json);
             break;
         case "addCopy":
             echo $bookcopy->addCopy($json);
@@ -159,6 +196,9 @@
             break;
         case "disposeCopy":
             echo $bookcopy->disposeCopy($json);
+            break;
+        case "getCopyByAccession":
+            echo $bookcopy->getCopyByAccession($json);
             break;
     }
 ?>

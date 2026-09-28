@@ -77,7 +77,8 @@
                 $stmt->execute();
                 $newId = $conn->lastInsertId();
         
-                $sqlCopy = "SELECT c.category_type, bc.status_id
+                //kwaon ang borrow_duration sa category sa book (in days)
+                $sqlCopy = "SELECT c.borrow_duration, bc.status_id
                         FROM book_copies bc
                         INNER JOIN books b ON bc.book_id=b.book_id
                         INNER JOIN categories c ON b.category_id=c.category_id
@@ -87,17 +88,15 @@
                 $sqlStatus = "UPDATE book_copies SET status_id=2 WHERE copy_id=:copy_id"; 
                 $stmtStatus = $conn->prepare($sqlStatus);
         
-
+                //faculty kay fixed gihapon 3 months
                 $sqlDtlFaculty = "INSERT INTO borrow_items(transaction_id, copy_id, expires_at, is_returned)
                             VALUES(:transaction_id, :copy_id, DATE_ADD(NOW(), INTERVAL 3 MONTH), 0)";
-                $sqlDtlEducational = "INSERT INTO borrow_items(transaction_id, copy_id, expires_at, is_returned)
-                            VALUES(:transaction_id, :copy_id, DATE_ADD(NOW(), INTERVAL 3 DAY), 0)";
-                $sqlDtlFiction = "INSERT INTO borrow_items(transaction_id, copy_id, expires_at, is_returned)
-                            VALUES(:transaction_id, :copy_id, DATE_ADD(NOW(), INTERVAL 7 DAY), 0)";
+                //ang uban kay based sa borrow_duration sa category
+                $sqlDtl = "INSERT INTO borrow_items(transaction_id, copy_id, expires_at, is_returned)
+                            VALUES(:transaction_id, :copy_id, DATE_ADD(NOW(), INTERVAL :duration DAY), 0)";
         
                 $stmtDtlFaculty = $conn->prepare($sqlDtlFaculty);
-                $stmtDtlEducational = $conn->prepare($sqlDtlEducational);
-                $stmtDtlFiction = $conn->prepare($sqlDtlFiction);
+                $stmtDtl = $conn->prepare($sqlDtl);
         
                 foreach($details as $row){
                     $stmtCopy->bindParam(":copy_id", $row['copy_id']);
@@ -110,20 +109,26 @@
                     }
         
                     if($borrowerInfo['role_type'] == "Faculty"){
-                        $stmtDtl = $stmtDtlFaculty;
-                    }
-                    elseif($copyInfo['category_type'] == "Educational"){
-                        $stmtDtl = $stmtDtlEducational;
+                        $stmtDtlFaculty->bindValue(":transaction_id", $newId);
+                        $stmtDtlFaculty->bindValue(":copy_id", $row['copy_id']);
+                        $stmtDtlFaculty->execute();
                     }
                     else{
-                        $stmtDtl = $stmtDtlFiction;
+                        $duration = (int)$copyInfo['borrow_duration'];
+
+                        //guard para di ma overdue kung walay duration ang category
+                        if($duration <= 0){
+                            $conn->rollBack();
+                            return json_encode("This book's category has no borrow duration set");
+                        }
+
+                        $stmtDtl->bindValue(":transaction_id", $newId);
+                        $stmtDtl->bindValue(":copy_id", $row['copy_id']);
+                        $stmtDtl->bindValue(":duration", $duration, PDO::PARAM_INT);
+                        $stmtDtl->execute();
                     }
         
-                    $stmtDtl->bindParam(":transaction_id", $newId);
-                    $stmtDtl->bindParam(":copy_id", $row['copy_id']);
-                    $stmtDtl->execute();
-        
-                    $stmtStatus->bindParam(":copy_id", $row['copy_id']);
+                    $stmtStatus->bindValue(":copy_id", $row['copy_id']);
                     $stmtStatus->execute();
                 }
         
