@@ -75,6 +75,20 @@
                     $stmtAuthor->bindParam(":author_id", $authorId);
                     $stmtAuthor->execute();
                 }
+
+                $sqlASC = "SELECT COALESCE(MAX(accession_number), 0) AS last_accession FROM book_copies";
+                $stmtASC = $conn->prepare($sqlASC);
+                $stmtASC->execute();
+                $lastAccession = $stmtASC->fetchColumn();
+                $currentAccession = $lastAccession + 1;
+
+                $sqlcopy = "INSERT INTO book_copies(book_id, accession_number, status_id, condition_id, condition_notes, added_by, added_at)
+                VALUES(:book_id, :accession_number, 1, 1, NULL, :added_by, NOW())";
+                $stmtcopy = $conn->prepare($sqlcopy);
+                $stmtcopy->bindParam(":book_id", $newId);
+                $stmtcopy->bindParam(":accession_number", $currentAccession);
+                $stmtcopy->bindParam(":added_by", $book['added_by']);
+                $stmtcopy->execute();
                 
                 $conn->commit();
                 $returnValue = 1;
