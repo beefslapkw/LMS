@@ -3,8 +3,20 @@
     header("Access-Control-Allow-Origin: *");
 
     class ReturnTransaction{
-        function getAllReturnTransactions(){
+        function getAllReturnTransactions($json){
             include "connection.php";
+
+            $json = json_decode($json, true);
+
+            $page  = isset($json['page']) ? max(1, (int)$json['page']) : 1;
+            $limit = isset($json['limit']) ? min(100, max(1, (int)$json['limit'])) : 10;
+            $offset = ($page - 1) * $limit;
+
+            //total count para sa ibuild nga pages sa frontend
+            $sqlCount = "SELECT COUNT(*) FROM return_transactions";
+            $stmtCount = $conn->prepare($sqlCount);
+            $stmtCount->execute();
+            $totalRows = (int)$stmtCount->fetchColumn();
 
             $sql = "SELECT ri.return_item_id, ri.condition_notes,
                         rt.return_transaction_id, rt.returned_at,
@@ -23,12 +35,21 @@
                 INNER JOIN conditions c ON ri.condition_on_return=c.condition_id
                 INNER JOIN users borrower ON bt.borrower_id=borrower.user_id
                 INNER JOIN users receiver ON rt.received_by=receiver.user_id
-                ORDER BY rt.returned_at DESC";
+                ORDER BY rt.returned_at DESC
+                LIMIT :limit OFFSET :offset";
             $stmt = $conn->prepare($sql);
+            $stmt->bindParam(":limit", $limit, PDO::PARAM_INT);
+            $stmt->bindParam(":offset", $offset, PDO::PARAM_INT);
             $stmt->execute();
             $rs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            return json_encode($rs);
+            return json_encode([
+                "data" => $rs,
+                "total" => $totalRows,
+                "page" => $page,
+                "limit" => $limit,
+                "totalPages" => (int)ceil($totalRows / $limit)
+            ]);
         }
         function addReturnTransaction($json){
             include "connection.php";
@@ -129,7 +150,7 @@
     $returntransaction = new ReturnTransaction();
     switch($operation){
         case "getAllReturnTransactions":
-            echo $returntransaction->getAllReturnTransactions();
+            echo $returntransaction->getAllReturnTransactions($json);
             break;
         case "addReturnTransaction":
             echo $returntransaction->addReturnTransaction($json);

@@ -415,6 +415,7 @@ const getAllUsers = async() => {
     }
 }
 
+//container - ang div, curPage - ang current page, totalPages - ang total rows/limit gikan sa api, goTo - ang function (ex: getAllBooks)
 const renderPagination = (container, curPage, totalPages, goTo) => {
     if(totalPages <= 1) return;
 
@@ -644,7 +645,11 @@ const getAllCopies = async(page = 1) => {
     }
 }
 
-const getAllAuthors = async() => {
+let currentAuthorsPage = 1;
+const authorsPerPage = 10;
+
+const getAllAuthors = async(page = 1) => {
+    currentAuthorsPage = page;
     const authorstablediv = document.getElementById('authorstablediv');
 
     const response = await axios.get(`${url}/authors.php`,{
@@ -690,11 +695,13 @@ const getAllAuthors = async() => {
                 viewAuthor(author.author_id);
             })
             row.querySelector(".update").addEventListener('click', () => {
-                updateAuthor(author.author_id, getAllAuthors);
+                updateAuthor(author.author_id, () => getAllAuthors(currentAuthorsPage));
             })
         })
         table.appendChild(tbody);
         authorstablediv.appendChild(table);
+
+        renderPagination(authorstablediv, response.data.page, response.data.totalPages, getAllAuthors);
     }
     else{
         alert("ERROR");
@@ -887,22 +894,22 @@ const getAllBorrows = async() => {
         allborrows = response.data;
         activeborrows = allborrows.filter(item => item.is_returned == 0);
 
-        response.data.forEach(transaction => { 
-            let status;
-            if(transaction.is_returned == 1){
-                status = "Returned";
-            }
-            else{
-                const now = new Date();
-                const dueDate = new Date(transaction.expires_at);
+        activeborrows.forEach(transaction => { 
+            // let status;
+            // if(transaction.is_returned == 1){
+            //     status = "Returned";
+            // }
+            // else{
+            //     const now = new Date();
+            //     const dueDate = new Date(transaction.expires_at);
 
-                if(now > dueDate){
-                    status = "Overdue";
-                }
-                else{
-                    status = "Active";
-                }
-            }
+            //     if(now > dueDate){
+            //         status = "Overdue";
+            //     }
+            //     else{
+            //         status = "Active";
+            //     }
+            // }
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${transaction.accession_number}</td>
@@ -911,7 +918,7 @@ const getAllBorrows = async() => {
                 <td>${transaction.borrowed_at}</td>
                 <td>${transaction.expires_at}</td>
                 <td>${transaction.processed_by_first_name + " " + transaction.processed_by_last_name}</td>
-                <td>${status}</td>
+                <td>Active</td>
             `;
             tbody.appendChild(row);
         })
@@ -923,11 +930,15 @@ const getAllBorrows = async() => {
     }
 }
 
-const getAllReturns = async() => {
+let currentReturnsPage = 1;
+const returnsPerPage = 10;
+
+const getAllReturns = async(page = 1) => {
+    currentReturnsPage = page;
     const returnstablediv = document.getElementById('returnstablediv');
 
     const response = await axios.get(`${url}/returntransactions.php`,{
-        params:{operation:"getAllReturnTransactions"}
+        params:{operation:"getAllReturnTransactions", json: JSON.stringify({ page: page, limit: returnsPerPage })}
     })
 
     returnstablediv.innerHTML = '';
@@ -952,7 +963,7 @@ const getAllReturns = async() => {
 
     if(response.status == 200){
         console.log(response.data);
-        response.data.forEach(transaction => { 
+        response.data.data.forEach(transaction => { 
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${transaction.accession_number}</td>
@@ -968,6 +979,8 @@ const getAllReturns = async() => {
         })
         table.appendChild(tbody);
         returnstablediv.appendChild(table);
+
+        renderPagination(returnstablediv, response.data.page, response.data.totalPages, getAllReturns);
     }
     else{
         alert("ERROR");
