@@ -862,70 +862,84 @@ const getAllCategories = async() => {
     }
 }
 
-const getAllBorrows = async() => {
+let currentBorrowsPage = 1;
+const borrowsPerPage = 10;
+let borrowfilter = 'active'; 
+
+const borrowStatusBadges = {
+    active:   '<span class="badge bg-success">Active</span>',
+    overdue:  '<span class="badge bg-danger">Overdue</span>',
+    returned: '<span class="badge bg-secondary">Returned</span>'
+};
+
+const getAllBorrows = async(page = 1) => {
+    currentBorrowsPage = page;
     const borrowstablediv = document.getElementById('borrowstablediv');
 
-    const response = await axios.get(`${url}/borrowtransactions.php`,{
-        params:{operation:"getAllBorrowTransactions"}
-    })
+    try{
+        const [response, outstanding] = await Promise.all([
+            axios.get(`${url}/borrowtransactions.php`,{
+                params:{operation:"getAllBorrowTransactions", json: JSON.stringify({ page: page, limit: borrowsPerPage, status: borrowfilter })}
+            }),
+            axios.get(`${url}/borrowtransactions.php`,{
+                params:{operation:"getAllBorrowTransactions", json: JSON.stringify({ status: 'outstanding' })}
+            })
+        ]);
 
-    borrowstablediv.innerHTML = '';
+        if(response.status == 200 && outstanding.status == 200){
+            activeborrows = outstanding.data.data;
 
-    const table = document.createElement('table');
-    const thead = document.createElement('thead');
-    thead.innerHTML = `
-        <tr>
-            <th>Accession Number</th>
-            <th>Book Title</th>
-            <th>Borrower</th>
-            <th>Borrowed At</th>
-            <th>Due Date</th>
-            <th>Processed By</th>
-            <th>Status</th>
-        </tr>
-    `;
-    table.appendChild(thead);
-    table.classList.add("table", "table-hover", "table-striped", "table-sm");
-    const tbody = document.createElement('tbody');
+            borrowstablediv.innerHTML = '';
 
-    if(response.status == 200){
-        console.log(response.data);
-
-        allborrows = response.data;
-        activeborrows = allborrows.filter(item => item.is_returned == 0);
-
-        activeborrows.forEach(transaction => { 
-            // let status;
-            // if(transaction.is_returned == 1){
-            //     status = "Returned";
-            // }
-            // else{
-            //     const now = new Date();
-            //     const dueDate = new Date(transaction.expires_at);
-
-            //     if(now > dueDate){
-            //         status = "Overdue";
-            //     }
-            //     else{
-            //         status = "Active";
-            //     }
-            // }
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${transaction.accession_number}</td>
-                <td>${transaction.book_title}</td>
-                <td>${transaction.borrower_first_name + " " + transaction.borrower_last_name}</td>
-                <td>${transaction.borrowed_at}</td>
-                <td>${transaction.expires_at}</td>
-                <td>${transaction.processed_by_first_name + " " + transaction.processed_by_last_name}</td>
-                <td>Active</td>
+            const table = document.createElement('table');
+            table.classList.add("table", "table-hover", "table-striped", "table-sm");
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Accession Number</th>
+                        <th>Book Title</th>
+                        <th>Borrower</th>
+                        <th>Borrowed At</th>
+                        <th>Due Date</th>
+                        <th>Processed By</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
             `;
-            tbody.appendChild(row);
-        })
-        table.appendChild(tbody);
-        borrowstablediv.appendChild(table);
+            const tbody = document.createElement('tbody');
+
+            if(response.data.data.length === 0){
+                const empty = document.createElement('tr');
+                empty.innerHTML = `<td colspan="7" class="text-center text-muted py-3">No ${borrowfilter === 'all' ? '' : borrowfilter + ' '}borrows found.</td>`;
+                tbody.appendChild(empty);
+            }
+
+            response.data.data.forEach(transaction => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${transaction.accession_number}</td>
+                    <td>${transaction.book_title}</td>
+                    <td>${transaction.borrower_first_name + " " + transaction.borrower_last_name}</td>
+                    <td>${transaction.borrowed_at}</td>
+                    <td>${transaction.expires_at}</td>
+                    <td>${transaction.processed_by_first_name + " " + transaction.processed_by_last_name}</td>
+                    <td>${borrowStatusBadges[transaction.status]}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            table.appendChild(tbody);
+            borrowstablediv.appendChild(table);
+
+            currentBorrowsPage = response.data.page; 
+            renderPagination(borrowstablediv, response.data.page, response.data.totalPages, getAllBorrows);
+        }
+        else{
+            alert("ERROR");
+        }
     }
-    else{
+    catch(error){
+        console.error(error);
         alert("ERROR");
     }
 }
@@ -1150,7 +1164,10 @@ document.addEventListener('DOMContentLoaded', async() => {
         getAllConditions(),
         getAllDisposalReasons()
     ]);
-
+    document.getElementById('borrowfilter').addEventListener('change', (e) => {
+        borrowfilter = e.target.value;
+        getAllBorrows(1);
+    })
     document.getElementById('startborrow').addEventListener('click', () => {
         startBorrow(() => {
             getAllBorrows();

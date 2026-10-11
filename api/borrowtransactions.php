@@ -3,10 +3,50 @@
     header("Access-Control-Allow-Origin: *");
 
     class BorrowTransaction{
-        function getAllBorrowTransactions(){
+        function getAllBorrowTransactions($json){
             include "connection.php";
 
+            $json = json_decode($json ?? '{}', true) ?: [];
+
+            $statusConditions = [
+                'active'      => "bi.is_returned = 0 AND bi.expires_at >= NOW()",
+                'overdue'     => "bi.is_returned = 0 AND bi.expires_at < NOW()",
+                'returned'    => "bi.is_returned = 1",
+                'outstanding' => "bi.is_returned = 0",   //active ug overdue (para sa Return/Renew, dili paginated)
+                'all'         => "1 = 1"
+            ];
+            $status = $json['status'] ?? 'active';
+            if(!isset($statusConditions[$status])){
+                $status = 'active';
+            }
+            $where = $statusConditions[$status];
+            $paginate = $status !== 'outstanding';
+
+            $page  = isset($json['page']) ? max(1, (int)$json['page']) : 1;
+            $limit = isset($json['limit']) ? min(100, max(1, (int)$json['limit'])) : 10;
+
+            $sqlCount = "SELECT COUNT(*) FROM borrow_items bi WHERE $where";
+            $stmtCount = $conn->prepare($sqlCount);
+            $stmtCount->execute();
+            $totalRows = (int)$stmtCount->fetchColumn();
+
+            if($paginate){
+                $totalPages = max(1, (int)ceil($totalRows / $limit));
+                $page = min($page, $totalPages);   
+                $offset = ($page - 1) * $limit;
+            }
+            else{
+                $totalPages = 1;
+                $page = 1;
+                $limit = $totalRows;
+            }
+
             $sql = "SELECT bi.borrow_item_id, bi.expires_at, bi.is_returned,
+                        CASE
+                            WHEN bi.is_returned = 1 THEN 'returned'
+                            WHEN bi.expires_at < NOW() THEN 'overdue'
+                            ELSE 'active'
+                        END AS status,
                         bt.transaction_id, bt.borrowed_at,
                         bc.copy_id, bc.accession_number,
                         b.book_title,
@@ -18,12 +58,27 @@
                 INNER JOIN books b ON bc.book_id=b.book_id
                 INNER JOIN users borrower ON bt.borrower_id=borrower.user_id
                 INNER JOIN users processor ON bt.processed_by=processor.user_id
-                ORDER BY bt.borrowed_at DESC";
+                WHERE $where
+                ORDER BY bt.borrowed_at DESC, bi.borrow_item_id DESC";
+            if($paginate){
+                $sql .= " LIMIT :limit OFFSET :offset";
+            }
+
             $stmt = $conn->prepare($sql);
+            if($paginate){
+                $stmt->bindParam(":limit", $limit, PDO::PARAM_INT);
+                $stmt->bindParam(":offset", $offset, PDO::PARAM_INT);
+            }
             $stmt->execute();
             $rs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            return json_encode($rs);
+            return json_encode([
+                "data" => $rs,
+                "total" => $totalRows,
+                "page" => $page,
+                "limit" => $limit,
+                "totalPages" => $totalPages
+            ]);
         }
         function addBorrowTransaction($json){
             include "connection.php";
@@ -155,7 +210,7 @@
     $borrowtransaction = new BorrowTransaction();
     switch($operation){
         case "getAllBorrowTransactions":
-            echo $borrowtransaction->getAllBorrowTransactions();
+            echo $borrowtransaction->getAllBorrowTransactions($json);
             break;
         case "addBorrowTransaction":
             echo $borrowtransaction->addBorrowTransaction($json);

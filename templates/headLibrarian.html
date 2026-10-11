@@ -103,6 +103,15 @@
 
                 <div class="tab-content">
                     <div class="tab-pane fade show active" id="borrows-record">
+                        <div class="d-flex justify-content-end align-items-center mb-2 gap-2">
+                            <label for="borrowfilter" class="form-label mb-0 small text-muted">Show:</label>
+                            <select id="borrowfilter" class="form-select form-select-sm w-auto">
+                                <option value="active" selected>Active</option>
+                                <option value="overdue">Overdue</option>
+                                <option value="returned">Returned</option>
+                                <option value="all">All</option>
+                            </select>
+                        </div>
                         <div id="borrowstablediv"></div> <br>
                     </div>
                     <div class="tab-pane fade" id="returns-record">
