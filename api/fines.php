@@ -3,8 +3,20 @@
     header("Access-Control-Allow-Origin: *");
 
     class FineRecord{
-        function getAllFines(){
+        function getAllFines($json){
             include "connection.php";
+
+            $json = json_decode($json, true);
+
+            $page  = isset($json['page']) ? max(1, (int)$json['page']) : 1;
+            $limit = isset($json['limit']) ? min(100, max(1, (int)$json['limit'])) : 10;
+            $offset = ($page - 1) * $limit;
+
+            //total count para sa ibuild nga pages sa frontend
+            $sqlCount = "SELECT COUNT(*) FROM fine_records";
+            $stmtCount = $conn->prepare($sqlCount);
+            $stmtCount->execute();
+            $totalRows = (int)$stmtCount->fetchColumn();
 
             $sql = "SELECT f.fine_id, f.days_late, f.fine_amount, f.is_paid, f.paid_at,
                         bi.borrow_item_id,
@@ -17,12 +29,21 @@
                 INNER JOIN book_copies bc ON bi.copy_id = bc.copy_id
                 INNER JOIN books b ON bc.book_id = b.book_id
                 INNER JOIN users u ON bt.borrower_id = u.user_id
-                ORDER BY f.is_paid ASC, bt.borrowed_at DESC";
+                ORDER BY f.is_paid ASC, bt.borrowed_at DESC
+                LIMIT :limit OFFSET :offset";
             $stmt = $conn->prepare($sql);
+            $stmt->bindParam(":limit", $limit, PDO::PARAM_INT);
+            $stmt->bindParam(":offset", $offset, PDO::PARAM_INT);
             $stmt->execute();
             $rs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            return json_encode($rs);
+            return json_encode([
+                "data" => $rs,
+                "total" => $totalRows,
+                "page" => $page,
+                "limit" => $limit,
+                "totalPages" => (int)ceil($totalRows / $limit)
+            ]);
         }
 
         function payFine($json){
@@ -56,7 +77,7 @@
     $finerecord = new FineRecord();
     switch($operation){
         case "getAllFines":
-            echo $finerecord->getAllFines();
+            echo $finerecord->getAllFines($json);
             break;
         case "payFine":
             echo $finerecord->payFine($json);

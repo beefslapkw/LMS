@@ -43,21 +43,43 @@ export const startBorrow = async(refreshDisplay) => {
         const idnum = document.getElementById('borroweridnum').value;
         foundUser = await findUserByIdNumber(idnum);
 
+        //reset ang copies kung mag-find ug lain nga user
+        selectedcopies = [];
+        renderSelectedCopies();
+
+        const findCopyBtn = document.getElementById('findcopy');
+        const confirmBtn = document.querySelector('.confirm-borrow');
+        findCopyBtn.disabled = false;
+        confirmBtn.disabled = false;
+
         const resultDiv = document.getElementById('userresult');
         if(!foundUser){
             resultDiv.innerHTML = `<span class="text-danger">User not found</span>`;
+            findCopyBtn.disabled = true;
+            confirmBtn.disabled = true;
+            return;
         }
-        else{
-            let limit = 3; 
-            if(foundUser.role_type == "Faculty"){
-                limit = 10;
-            }
 
-            const activeCount = foundUser.active_borrow_count;
-            resultDiv.innerHTML = `<span class="text-success">Found: ${foundUser.first_name} ${foundUser.last_name} (${activeCount}/${limit} borrowed)</span>`;
+        let limit = 3; 
+        if(foundUser.role_type == "Faculty"){
+            limit = 10;
         }
+        const activeCount = foundUser.active_borrow_count;
+
+        if(foundUser.unpaid_fine_count > 0){
+            resultDiv.innerHTML = `<span class="text-danger">${foundUser.first_name} ${foundUser.last_name} has unpaid fines and cannot borrow</span>`;
+            findCopyBtn.disabled = true;
+            confirmBtn.disabled = true;
+            return;
+        }
+        if(activeCount >= limit){
+            resultDiv.innerHTML = `<span class="text-danger">${foundUser.first_name} ${foundUser.last_name} has reached the borrow limit (${activeCount}/${limit})</span>`;
+            findCopyBtn.disabled = true;
+            confirmBtn.disabled = true;
+            return;
+        }
+        resultDiv.innerHTML = `<span class="text-success">Found: ${foundUser.first_name} ${foundUser.last_name} (${activeCount}/${limit} borrowed)</span>`;
     })
-
     document.getElementById('findcopy').addEventListener('click', async() => {
         if(!foundUser){
             alert("Please find a borrower first");

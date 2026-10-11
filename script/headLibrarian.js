@@ -1001,11 +1001,15 @@ const getAllReturns = async(page = 1) => {
     }
 }
 
-const getAllRenewals = async() => {
+let currentRenewalsPage = 1;
+const renewalsPerPage = 10;
+
+const getAllRenewals = async(page = 1) => {
+    currentRenewalsPage = page;
     const renewalstablediv = document.getElementById('renewalstablediv');
 
     const response = await axios.get(`${url}/renewals.php`,{
-        params:{operation:"getAllRenewals"}
+        params:{operation:"getAllRenewals", json: JSON.stringify({ page: page, limit: renewalsPerPage })}
     })
 
     renewalstablediv.innerHTML = '';
@@ -1029,7 +1033,7 @@ const getAllRenewals = async() => {
 
     if(response.status == 200){
         console.log(response.data);
-        response.data.forEach(transaction => { 
+        response.data.data.forEach(transaction => { 
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${transaction.accession_number}</td>
@@ -1044,17 +1048,23 @@ const getAllRenewals = async() => {
         })
         table.appendChild(tbody);
         renewalstablediv.appendChild(table);
+
+        renderPagination(renewalstablediv, response.data.page, response.data.totalPages, getAllRenewals);
     }
     else{
         alert("ERROR");
     }
 }
 
-const getAllFines = async() => {
+let currentFinesPage = 1;
+const finesPerPage = 10;
+
+const getAllFines = async(page = 1) => {
+    currentFinesPage = page;
     const finestablediv = document.getElementById('finestablediv');
 
     const response = await axios.get(`${url}/fines.php`,{
-        params:{operation:"getAllFines"}
+        params:{operation:"getAllFines", json: JSON.stringify({ page: page, limit: renewalsPerPage })}
     })
 
     finestablediv.innerHTML = '';
@@ -1079,7 +1089,7 @@ const getAllFines = async() => {
 
     if(response.status == 200){
         console.log(response.data);
-        response.data.forEach(fine => { 
+        response.data.data.forEach(fine => { 
             let paidAt;
             if(!fine.paid_at){
                 paidAt = "-";
@@ -1127,6 +1137,57 @@ const getAllFines = async() => {
         })
         table.appendChild(tbody);
         finestablediv.appendChild(table);
+
+        renderPagination(finestablediv, response.data.page, response.data.totalPages, getAllFines);
+    }
+    else{
+        alert("ERROR");
+    }
+}
+
+let currentHistoryPage = 1;
+const historyPerPage = 10;
+
+const getAllTransactionHistory = async(page = 1) => {
+    currentHistoryPage = page;
+    const historytablediv = document.getElementById('historytablediv');
+
+    const response = await axios.get(`${url}/transactionhistory.php`,{
+        params:{operation:"getAllTransactionHistory", json: JSON.stringify({ page: page, limit: historyPerPage })}
+    })
+
+    historytablediv.innerHTML = '';
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+        <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Borrower</th>
+            <th>Handled By</th>
+        </tr>
+    `;
+    table.appendChild(thead);
+    table.classList.add("table", "table-hover", "table-striped", "table-sm");
+    const tbody = document.createElement('tbody');
+
+    if(response.status == 200){
+        console.log(response.data);
+        response.data.data.forEach(transaction => { 
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${transaction.transaction_date}</td>
+                <td>${transaction.transaction_type}</td>
+                <td>${transaction.borrower_first_name + " " + transaction.borrower_last_name}</td>
+                <td>${transaction.staff_first_name + " " + transaction.staff_last_name}</td>
+            `;
+            tbody.appendChild(row);
+        })
+        table.appendChild(tbody);
+        historytablediv.appendChild(table);
+
+        renderPagination(historytablediv, response.data.page, response.data.totalPages, getAllTransactionHistory);
     }
     else{
         alert("ERROR");
@@ -1224,4 +1285,5 @@ document.addEventListener('DOMContentLoaded', async() => {
     getAllReturns();
     getAllRenewals();
     getAllFines();
+    getAllTransactionHistory();
 })

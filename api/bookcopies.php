@@ -169,6 +169,18 @@
 
             return json_encode($stmt->fetch(PDO::FETCH_ASSOC));
         }
+        function getAvailableCount(){
+            include "connection.php";
+
+            $sql = "SELECT COUNT(*) FROM book_copies c
+                JOIN statuses s ON s.status_id = c.status_id
+                WHERE s.status_desc = 'Available'";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute();
+            $rs = (int)$stmt->fetchColumn();
+
+            return json_encode($rs);
+        }
     }
 
     if($_SERVER['REQUEST_METHOD'] == 'GET'){
@@ -199,6 +211,9 @@
             break;
         case "getCopyByAccession":
             echo $bookcopy->getCopyByAccession($json);
+            break;
+        case "getAvailableCount":
+            echo $bookcopy->getAvailableCount();
             break;
     }
 ?>

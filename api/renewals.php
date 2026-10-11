@@ -3,8 +3,20 @@
     header("Access-Control-Allow-Origin: *");
 
     class RenewalRecord{
-        function getAllRenewals(){
+        function getAllRenewals($json){
             include "connection.php";
+
+            $json = json_decode($json, true);
+
+            $page  = isset($json['page']) ? max(1, (int)$json['page']) : 1;
+            $limit = isset($json['limit']) ? min(100, max(1, (int)$json['limit'])) : 10;
+            $offset = ($page - 1) * $limit;
+
+            //total count para sa ibuild nga pages sa frontend
+            $sqlCount = "SELECT COUNT(*) FROM renewal_records";
+            $stmtCount = $conn->prepare($sqlCount);
+            $stmtCount->execute();
+            $totalRows = (int)$stmtCount->fetchColumn();
 
             $sql = "SELECT rr.renewal_record_id, rr.old_due_date, rr.new_due_date, rr.renewed_at,
                         bi.borrow_item_id,
@@ -19,12 +31,21 @@
                 INNER JOIN books b ON bc.book_id=b.book_id
                 INNER JOIN users borrower ON bt.borrower_id=borrower.user_id
                 INNER JOIN users renewer ON rr.renewed_by=renewer.user_id
-                ORDER BY rr.renewed_at DESC";
+                ORDER BY rr.renewed_at DESC
+                LIMIT :limit OFFSET :offset";
             $stmt = $conn->prepare($sql);
+            $stmt->bindParam(":limit", $limit, PDO::PARAM_INT);
+            $stmt->bindParam(":offset", $offset, PDO::PARAM_INT);
             $stmt->execute();
             $rs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            return json_encode($rs);
+            return json_encode([
+                "data" => $rs,
+                "total" => $totalRows,
+                "page" => $page,
+                "limit" => $limit,
+                "totalPages" => (int)ceil($totalRows / $limit)
+            ]);
         }
         function addRenewal($json){
             include "connection.php";
@@ -152,7 +173,7 @@
     $renewalrecord = new RenewalRecord();
     switch($operation){
         case "getAllRenewals":
-            echo $renewalrecord->getAllRenewals();
+            echo $renewalrecord->getAllRenewals($json);
             break;
         case "addRenewal":
             echo $renewalrecord->addRenewal($json);

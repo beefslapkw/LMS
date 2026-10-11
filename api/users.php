@@ -98,7 +98,11 @@
                         r.role_type, d.department_name, u.is_active,
                         (SELECT COUNT(*) FROM borrow_items bi
                             INNER JOIN borrow_transactions bt ON bi.transaction_id = bt.transaction_id
-                            WHERE bt.borrower_id = u.user_id AND bi.is_returned = 0) AS active_borrow_count
+                            WHERE bt.borrower_id = u.user_id AND bi.is_returned = 0) AS active_borrow_count,
+                        (SELECT COUNT(*) FROM fine_records fr
+                            INNER JOIN borrow_items bi ON fr.borrow_item_id = bi.borrow_item_id
+                            INNER JOIN borrow_transactions bt ON bi.transaction_id = bt.transaction_id
+                            WHERE bt.borrower_id = u.user_id AND fr.is_paid = 0) AS unpaid_fine_count
                     FROM users u
                     INNER JOIN roles r ON u.role_id=r.role_id
                     LEFT JOIN departments d ON u.department_id=d.department_id
