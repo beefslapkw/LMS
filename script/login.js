@@ -1,4 +1,4 @@
-const url = "http://localhost/LMS/api";
+const url = `${location.origin}/LMS/api`;
 
 const login = async() => {
     const username = document.getElementById('username').value;

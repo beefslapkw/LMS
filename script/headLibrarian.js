@@ -54,7 +54,7 @@ import { addDisposalReason } from "./disposalreasonmodules/add.js";
 import { viewDisposalReason } from "./disposalreasonmodules/view.js";
 import { updateDisposalReason } from "./disposalreasonmodules/update.js";
 
-const url = "http://localhost/LMS/api";
+const url = `${location.origin}/LMS/api`;
 sessionStorage.setItem("url", url);
 let departments = [];
 let roles = [];

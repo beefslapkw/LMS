@@ -1,4 +1,4 @@
-const url = "http://localhost/LMS/api";
+const url = `${location.origin}/LMS/api`;
 const departmentlist = document.getElementById('department');
 
 const getAllDepartments = async() => {
