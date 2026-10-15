@@ -82,7 +82,11 @@ export const startBorrow = async(refreshDisplay) => {
     })
     document.getElementById('findcopy').addEventListener('click', async() => {
         if(!foundUser){
-            alert("Please find a borrower first");
+            Swal.fire({
+                title: 'Failed',
+                text: "Please find a borrower first",
+                icon: 'error'
+            })
             return;
         }
 
@@ -92,7 +96,11 @@ export const startBorrow = async(refreshDisplay) => {
         }
 
         if(foundUser.active_borrow_count + selectedcopies.length >= limit){
-            alert("This borrower has reached their borrow limit");
+            Swal.fire({
+                title: 'Failed',
+                text: "This borrower has reached their borrow limit",
+                icon: 'error'
+            })
             return;
         }
 
@@ -132,22 +140,38 @@ export const startBorrow = async(refreshDisplay) => {
 
     modalFooter.querySelector(".confirm-borrow").addEventListener('click', async() => {
         if(!foundUser){
-            alert("Please find a valid borrower first");
+            Swal.fire({
+                title: 'Failed',
+                text: "Please find a valid borrower first",
+                icon: 'error'
+            })
             return;
         }
         if(selectedcopies.length == 0){
-            alert("Please add at least one copy to borrow");
+            Swal.fire({
+                title: 'Failed',
+                text: "Please find at least one copy to borrow",
+                icon: 'error'
+            })
             return;
         }
 
         const result = await submitBorrow();
         if(result == 1){
             refreshDisplay();
-            alert("Books successfully borrowed");
+            Swal.fire({
+                title: 'Success',
+                text: "Books successfully borrowed",
+                icon: 'success'
+            })
             myModal.hide();
         }
         else{
-            alert(result || "Failed to process borrow");
+            Swal.fire({
+                title: 'Failed',
+                text: result || "Failed to process borrow",
+                icon: 'error'
+            })
         }
     })
 

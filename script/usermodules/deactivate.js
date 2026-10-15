@@ -22,11 +22,19 @@ export const deactivateUser = async(user_id, refreshDisplay) => {
 
         if(result == 1){
             refreshDisplay();
-            alert("Successfully deactivated user");
+            Swal.fire({
+                title: 'Success',
+                text: "Successfully deactivated user",
+                icon: 'success'
+            })
             myModal.hide();
         }
         else{
-            alert(result);
+            Swal.fire({
+                title: 'Failed',
+                text: result,
+                icon: 'error'
+            })
         }
     })
 

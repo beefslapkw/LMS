@@ -28,11 +28,19 @@ export const addGenre = async(refreshDisplay) => {
     modalFooter.querySelector(".add").addEventListener('click', async() => {
         if(await addGenreDetails() == 1){
             refreshDisplay();
-            alert("Successfully added genre");
+            Swal.fire({
+                title: 'Success',
+                text: "Genre added successfully",
+                icon: 'success'
+            })
             myModal.hide();
         }
         else{
-            alert("Failed to add genre");
+            Swal.fire({
+                title: 'Failed',
+                text: "Failed to add genre",
+                icon: 'error'
+            })
         }
     })
 
@@ -40,8 +48,14 @@ export const addGenre = async(refreshDisplay) => {
 }
 
 const addGenreDetails = async() => {
+    const name = document.getElementById('genre_name').value;
+
+    if(!name){
+        return
+    }
+
     const jsondata = {
-        genre_name: document.getElementById('genre_name').value
+        genre_name: name
     };
 
     const formData = new FormData();

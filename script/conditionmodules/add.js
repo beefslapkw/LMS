@@ -28,11 +28,19 @@ export const addCondition = async(refreshDisplay) => {
     modalFooter.querySelector(".add").addEventListener('click', async() => {
         if(await addConditionDetails() == 1){
             refreshDisplay();
-            alert("Successfully added condition");
+            Swal.fire({
+                title: 'Success',
+                text: "Condition added successfully",
+                icon: 'success'
+            })
             myModal.hide();
         }
         else{
-            alert("Failed to add condition");
+            Swal.fire({
+                title: 'Failed',
+                text: "Failed to add condition",
+                icon: 'error'
+            })
         }
     })
 
@@ -40,8 +48,14 @@ export const addCondition = async(refreshDisplay) => {
 }
 
 const addConditionDetails = async() => {
+    const desc = document.getElementById('condition_desc').value;
+
+    if(!desc){
+        return;
+    }
+
     const jsondata = {
-        condition_desc: document.getElementById('condition_desc').value
+        condition_desc: desc
     };
 
     const formData = new FormData();

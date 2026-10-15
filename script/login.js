@@ -36,7 +36,11 @@ const login = async() => {
         }
     }
     else{
-        alert(response.data);
+        Swal.fire({
+            title: 'Failed',
+            text: response.data,
+            icon: 'error'
+        })
     }
 }
 

@@ -22,11 +22,19 @@ export const reactivateBook = async(book_id, refreshDisplay) => {
 
         if(result == 1){
             refreshDisplay();
-            alert("Successfully reactivated book");
+            Swal.fire({
+                title: 'Success',
+                text: "Successfully reactivated book",
+                icon: 'success'
+            })
             myModal.hide();
         }
         else{
-            alert(result);
+            Swal.fire({
+                title: 'Failed',
+                text: result,
+                icon: 'error'
+            })
         }
     })
 

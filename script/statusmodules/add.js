@@ -28,11 +28,19 @@ export const addStatus = async(refreshDisplay) => {
     modalFooter.querySelector(".add").addEventListener('click', async() => {
         if(await addStatusDetails() == 1){
             refreshDisplay();
-            alert("Successfully added status");
+            Swal.fire({
+                title: 'Success',
+                text: "Status added successfully",
+                icon: 'success'
+            })
             myModal.hide();
         }
         else{
-            alert("Failed to add status");
+            Swal.fire({
+                title: 'Failed',
+                text: "Failed to add status",
+                icon: 'error'
+            })
         }
     })
 
@@ -40,8 +48,14 @@ export const addStatus = async(refreshDisplay) => {
 }
 
 const addStatusDetails = async() => {
+    const desc = document.getElementById('status_desc').value;
+
+    if(!desc){
+        return;
+    }
+    
     const jsondata = {
-        status_desc: document.getElementById('status_desc').value
+        status_desc: desc
     };
 
     const formData = new FormData();

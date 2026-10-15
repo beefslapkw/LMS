@@ -34,11 +34,19 @@ export const addCategory = async(refreshDisplay) => {
     modalFooter.querySelector(".add").addEventListener('click', async() => {
         if(await addCategoryDetails() == 1){
             refreshDisplay();
-            alert("Successfully added category");
+            Swal.fire({
+                title: 'Success',
+                text: "Category added successfully",
+                icon: 'success'
+            })
             myModal.hide();
         }
         else{
-            alert("Failed to add category");
+            Swal.fire({
+                title: 'Failed',
+                text: "Failed to add category",
+                icon: 'error'
+            })
         }
     })
 
@@ -46,9 +54,16 @@ export const addCategory = async(refreshDisplay) => {
 }
 
 const addCategoryDetails = async() => {
+    const categtype = document.getElementById('category_type').value;
+    const borrowdur = Number(document.getElementById('borrow_duration').value); 
+    
+    if(!categtype || !borrowdur){
+        return;
+    }
+
     const jsondata = {
-        category_type: document.getElementById('category_type').value,
-        borrow_duration: Number(document.getElementById('borrow_duration').value)
+        category_type: categtype,
+        borrow_duration: borrowdur
     };
 
     const formData = new FormData();

@@ -75,17 +75,29 @@ export const disposeCopy = async(copy_id, reasons, disposedStatusId, refreshDisp
         const reasonId = document.getElementById('reason').value;
 
         if(!reasonId){
-            alert("Please select a disposal reason");
+            Swal.fire({
+                title: 'Failed',
+                text: "Please select a disposal reason",
+                icon: 'error'
+            })
             return;
         }
 
         if(await disposeCopyDetails(copy_id, disposedStatusId) == 1){
             refreshDisplay();
-            alert("Copy successfully disposed");
+            Swal.fire({
+                title: 'Success',
+                text: "Copy disposed successfully",
+                icon: 'success'
+            })
             myModal.hide();
         }
         else{
-            alert("Failed to dispose copy");
+            Swal.fire({
+                title: 'Failed',
+                text: "Failed to dispose copy",
+                icon: 'error'
+            })
         }
     })
 

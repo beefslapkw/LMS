@@ -28,11 +28,19 @@ export const addAuthor= async(refreshDisplay) => {
     modalFooter.querySelector(".add").addEventListener('click', async() => {
         if(await addAuthorDetails() == 1){
             refreshDisplay();
-            alert("Successfully added author");
+            Swal.fire({
+                title: 'Success',
+                text: "Author added successfully",
+                icon: 'success'
+            })
             myModal.hide();
         }
         else{
-            alert("Failed to add author");
+            Swal.fire({
+                title: 'Failed',
+                text: "Failed to add author",
+                icon: 'error'
+            })
         }
     })
 
@@ -40,8 +48,14 @@ export const addAuthor= async(refreshDisplay) => {
 }
 
 const addAuthorDetails = async() => {
+    const name = document.getElementById('author_name').value
+
+    if(!name){
+        return;
+    }
+
     const jsondata = {
-        author_name: document.getElementById('author_name').value
+        author_name: name
     };
 
     const formData = new FormData();

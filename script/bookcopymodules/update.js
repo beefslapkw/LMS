@@ -28,7 +28,7 @@ export const updateCopy = async(copy_id, conditions, refreshDisplay) => {
                 <td>Accession Number</td>  
                 <td>
                     <input type="text" id="acsnumber" class="form-control" value="${copy.accession_number}" disabled> 
-                <td>
+                </td>
             </tr>
             <tr>   
                 <td>Condition</td>
@@ -55,13 +55,33 @@ export const updateCopy = async(copy_id, conditions, refreshDisplay) => {
     modalFooter.innerHTML = myHtml;
 
     modalFooter.querySelector(".update").addEventListener('click', async() => {
+        const newCondition = document.getElementById('ncondition').value;
+        const newNotes = document.getElementById('nconditionNotes').value;
+
+        if(newCondition == copy.condition_id && newNotes == condition){
+            Swal.fire({
+                title: 'No changes',
+                text: "Nothing was changed",
+                icon: 'info'
+            })
+            return;
+        }
+        
         if(await updateCopyDetails(copy_id) == 1){
             refreshDisplay();
-            alert("Successfully saved changes");
+            Swal.fire({
+                title: 'Success',
+                text: "Successfully saved changes",
+                icon: 'success'
+            })
             myModal.hide();
         }
         else{
-            alert("Failed to save changes");
+            Swal.fire({
+                title: 'Failed',
+                text: "Failed to save changes",
+                icon: 'error'
+            })
         }
     })
 

@@ -28,11 +28,19 @@ export const addDepartment = async(refreshDisplay) => {
     modalFooter.querySelector(".add").addEventListener('click', async() => {
         if(await addDepartmentDetails() == 1){
             refreshDisplay();
-            alert("Successfully added department");
+            Swal.fire({
+                title: 'Success',
+                text: "Department added successfully",
+                icon: 'success'
+            })
             myModal.hide();
         }
         else{
-            alert("Failed to add department");
+            Swal.fire({
+                title: 'Failed',
+                text: "Failed to add department",
+                icon: 'error'
+            })
         }
     })
 
@@ -40,8 +48,14 @@ export const addDepartment = async(refreshDisplay) => {
 }
 
 const addDepartmentDetails = async() => {
+    const deptname = document.getElementById('department_name').value;
+    
+    if(!deptname){
+        return;
+    }
+
     const jsondata = {
-        department_name: document.getElementById('department_name').value
+        department_name: deptname
     };
 
     const formData = new FormData();

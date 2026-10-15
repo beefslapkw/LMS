@@ -22,11 +22,19 @@ export const reactivateUser = async(user_id, refreshDisplay) => {
 
         if(result == 1){
             refreshDisplay();
-            alert("Successfully reactivated user");
+            Swal.fire({
+                title: 'Success',
+                text: "Successfully reactivated user",
+                icon: 'success'
+            })
             myModal.hide();
         }
         else{
-            alert(result);
+            Swal.fire({
+                title: 'Failed',
+                text: result,
+                icon: 'error'
+            })
         }
     })
 

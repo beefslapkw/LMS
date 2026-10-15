@@ -48,21 +48,37 @@ export const addCopy = async(refreshDisplay) => {
         const qty = Number(document.getElementById('qty').value);
 
         if(!selectedBookId){
-            alert("Please select a book");
+            Swal.fire({
+                title: 'Failed',
+                text: "Please select a book",
+                icon: 'error'
+            })
             return;
         }
         if(!Number.isInteger(qty) || qty < 1){
-            alert("Please enter a valid amount of copies");
+            Swal.fire({
+                title: 'Failed',
+                text: "Please enter a valid quantity",
+                icon: 'error'
+            })
             return;
         }
 
         if(await addCopyDetails() > 0){
             refreshDisplay();
-            alert("Successfully added book copies");
+            Swal.fire({
+                title: 'Success',
+                text: "Successfully added book copies",
+                icon: 'success'
+            })
             myModal.hide();
         }
         else{
-            alert("Failed to add copy/s");
+            Swal.fire({
+                title: 'Failed',
+                text: "Failed to add copy/s",
+                icon: 'error'
+            })
         }
     })
 

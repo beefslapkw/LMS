@@ -29,11 +29,19 @@ export const updateRole = async(role_id, refreshDisplay) => {
     modalFooter.querySelector(".update").addEventListener('click', async() => {
         if(await updateRoleDetails(role_id) == 1){
             refreshDisplay();
-            alert("Successfully saved changes");
+            Swal.fire({
+                title: 'Success',
+                text: "Successfully saved changes",
+                icon: 'success'
+            })
             myModal.hide();
         }
         else{
-            alert("Failed to save changes");
+            Swal.fire({
+                title: 'Failed',
+                text: "Failed to save changes",
+                icon: 'error'
+            })
         }
     })
 

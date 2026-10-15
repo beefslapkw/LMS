@@ -1127,10 +1127,18 @@ const getAllFines = async(page = 1) => {
 
                     if(await payFineDetails(fine.fine_id) == 1){
                         getAllFines();
-                        alert("Fine marked as paid");
+                        Swal.fire({
+                            title: 'Success',
+                            text: "Fine paid successfully",
+                            icon: 'success'
+                        })
                     }
                     else{
-                        alert("Failed to update fine");
+                        Swal.fire({
+                            title: 'Failed',
+                            text: "Fine payment failed",
+                            icon: 'error'
+                        })
                     }
                 })
             }

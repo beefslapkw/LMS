@@ -28,11 +28,19 @@ export const addDisposalReason = async(refreshDisplay) => {
     modalFooter.querySelector(".add").addEventListener('click', async() => {
         if(await addDisposalReasonDetails() == 1){
             refreshDisplay();
-            alert("Successfully added disposalreason");
+            Swal.fire({
+                title: 'Success',
+                text: "Disposal reason added successfully",
+                icon: 'success'
+            })
             myModal.hide();
         }
         else{
-            alert("Failed to add disposalreason");
+            Swal.fire({
+                title: 'Failed',
+                text: "Failed to add disposal reason",
+                icon: 'error'
+            })
         }
     })
 
@@ -40,8 +48,14 @@ export const addDisposalReason = async(refreshDisplay) => {
 }
 
 const addDisposalReasonDetails = async() => {
+    const desc = document.getElementById('reason_desc').value; 
+
+    if(!desc){
+        return;
+    }
+
     const jsondata = {
-        reason_desc: document.getElementById('reason_desc').value
+        reason_desc: desc
     };
 
     const formData = new FormData();

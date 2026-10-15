@@ -28,11 +28,19 @@ export const addRole = async(refreshDisplay) => {
     modalFooter.querySelector(".add").addEventListener('click', async() => {
         if(await addRoleDetails() == 1){
             refreshDisplay();
-            alert("Successfully added role");
+            Swal.fire({
+                title: 'Success',
+                text: "Role added successfully",
+                icon: 'success'
+            })
             myModal.hide();
         }
         else{
-            alert("Failed to add role");
+            Swal.fire({
+                title: 'Failed',
+                text: "Failed to add role",
+                icon: 'error'
+            })
         }
     })
 
@@ -40,8 +48,14 @@ export const addRole = async(refreshDisplay) => {
 }
 
 const addRoleDetails = async() => {
+    const type = document.getElementById('role_type').value;
+    
+    if(!type){
+        return;
+    }
+
     const jsondata = {
-        role_type: document.getElementById('role_type').value
+        role_type: type
     };
 
     const formData = new FormData();

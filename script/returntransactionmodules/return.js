@@ -68,13 +68,21 @@ export const startReturn = async(allActiveBorrows, conditions, refreshBorrows, r
 
     modalFooter.querySelector(".confirm-return").addEventListener('click', async() => {
         if (selectedreturns.length == 0) {
-            alert("Please add at least one item to return");
+            Swal.fire({
+                title: 'Failed',
+                text: "Please select at least one item to return",
+                icon: 'error'
+            })
             return;
         }
 
         const missingCondition = selectedreturns.some(r => !r.condition_on_return);
         if (missingCondition) {
-            alert("Please select a condition for every item");
+            Swal.fire({
+                title: 'Failed',
+                text: "Please select a condition for every item",
+                icon: 'error'
+            })
             return;
         }
 
@@ -83,10 +91,18 @@ export const startReturn = async(allActiveBorrows, conditions, refreshBorrows, r
             refreshBorrows();
             refreshReturns();
             refreshFines();
-            alert("Books successfully returned");
+            Swal.fire({
+                title: 'Success',
+                text: "Books successfully returned",
+                icon: 'success'
+            })
             myModal.hide();
         } else {
-            alert(result || "Failed to process return");
+            Swal.fire({
+                title: 'Failed',
+                text: result || "Failed to process return",
+                icon: 'error'
+            })
         }
     });
 

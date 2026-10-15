@@ -32,11 +32,19 @@ const register = async() => {
     const department = departmentlist.value;
 
     if(!idnum || !lastn || !firstn || !contact || !email || !username || !password || !department){
-        alert("Please fill out all the required fields");
+        Swal.fire({
+            title: 'Failed',
+            text: "Please fill-out all the required fields",
+            icon: 'error'
+        })
         return;
     }
     if(!email.includes("@") || !email.includes(".com")){
-        alert("Invalid email address");
+        Swal.fire({
+            title: 'Failed',
+            text: "Invalid email address",
+            icon: 'error'
+        })
         return;
     }
 
@@ -62,11 +70,19 @@ const register = async() => {
     })
 
     if(response.data == 1){
-        alert("Successfully Registered");
+        Swal.fire({
+            title: 'Success',
+            text: "Sucessfully Registered",
+            icon: 'success'
+        })
         clearForm();
     }
     else{
-        alert(response.data);
+        Swal.fire({
+            title: 'Failed',
+            text: response.data,
+            icon: 'error'
+        })
     }
 }
 

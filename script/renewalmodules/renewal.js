@@ -58,7 +58,11 @@ export const startRenew = async(allActiveBorrows, refreshBorrows, refreshRenewal
 
     modalFooter.querySelector(".confirm-renew").addEventListener('click', async() => {
         if(!foundBorrowItem){
-            alert("Please find a valid active borrow first");
+            Swal.fire({
+                title: 'Failed',
+                text: "Please find a valid active borrow first",
+                icon: 'error'
+            })
             return;
         }
 
@@ -66,11 +70,19 @@ export const startRenew = async(allActiveBorrows, refreshBorrows, refreshRenewal
         if(result == 1){
             refreshBorrows();
             refreshRenewals();
-            alert("Renewal successful");
+            Swal.fire({
+                title: 'Success',
+                text: "Renewal successful",
+                icon: 'success'
+            })
             myModal.hide();
         }
         else{
-            alert(result);
+            Swal.fire({
+                title: 'Failed',
+                text: result,
+                icon: 'error'
+            })
         }
     })
 

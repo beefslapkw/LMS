@@ -76,11 +76,19 @@ export const addBook = async(authors, categories, genres, publishers, refreshDis
     modalFooter.querySelector(".add").addEventListener('click', async() => {
         if(await addBookDetails() == 1){
             refreshDisplay();
-            alert("Successfully added book details");
+            Swal.fire({
+                title: 'Success',
+                text: "Successfully added book details",
+                icon: 'success'
+            })
             myModal.hide();
         }
         else{
-            alert("Failed to add book");
+            Swal.fire({
+                title: 'Failed',
+                text: "Failed to add book",
+                icon: 'error'
+            })
         }
     })
 

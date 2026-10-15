@@ -18,7 +18,7 @@ export const updateCategory = async(category_id, refreshDisplay) => {
             <tr>
                 <td>Borrow Duration (days)</td>
                 <td>
-                    <input type="number" id="nborrow_duration" class="form-control">
+                    <input type="number" id="nborrow_duration" class="form-control" value="${category.borrow_duration}">
                 </td>
             </tr>
         </table>
@@ -35,11 +35,19 @@ export const updateCategory = async(category_id, refreshDisplay) => {
     modalFooter.querySelector(".update").addEventListener('click', async() => {
         if(await updateCategoryDetails(category_id) == 1){
             refreshDisplay();
-            alert("Successfully saved changes");
+            Swal.fire({
+                title: 'Success',
+                text: "Successfully saved changes",
+                icon: 'success'
+            })
             myModal.hide();
         }
         else{
-            alert("Failed to save changes");
+            Swal.fire({
+                title: 'Failed',
+                text: "Failed to save changes",
+                icon: 'error'
+            })
         }
     })
 
