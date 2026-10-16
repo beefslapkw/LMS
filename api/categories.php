@@ -3,15 +3,37 @@
     header("Access-Control-Allow-Origin: *");
 
     class Category{
-        function getAllCategories(){
+        function getAllCategories($json){
             include "connection.php";
 
-            $sql = "SELECT * FROM categories";
+            $json = json_decode($json, true);
+
+            $page  = isset($json['page']) ? max(1, (int)$json['page']) : 1;
+            $limit = isset($json['limit']) ? min(100, max(1, (int)$json['limit'])) : 10;
+            $offset = ($page - 1) * $limit;
+
+            //total count para sa ibuild nga pages sa frontend
+            $sqlCount = "SELECT COUNT(*) FROM categories";
+            $stmtCount = $conn->prepare($sqlCount);
+            $stmtCount->execute();
+            $totalRows = (int)$stmtCount->fetchColumn();
+
+            $sql = "SELECT * FROM categories
+                ORDER BY category_type
+                LIMIT :limit OFFSET :offset";
             $stmt = $conn->prepare($sql);
+            $stmt->bindParam(":limit", $limit, PDO::PARAM_INT);
+            $stmt->bindParam(":offset", $offset, PDO::PARAM_INT);
             $stmt->execute();
             $rs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            return json_encode($rs);
+            return json_encode([
+                "data" => $rs,
+                "total" => $totalRows,
+                "page" => $page,
+                "limit" => $limit,
+                "totalPages" => (int)ceil($totalRows / $limit)
+            ]);
         }
         function addCategory($json){
             include "connection.php";
@@ -94,7 +116,7 @@
     $category = new Category();
     switch($operation){
         case "getAllCategories":
-            echo $category->getAllCategories();
+            echo $category->getAllCategories($json);
             break;
         case "addCategory":
             echo $category->addCategory($json);

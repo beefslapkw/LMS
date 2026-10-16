@@ -13,20 +13,42 @@
     }
 
     class User{
-        function getAllUsers(){
+        function getAllUsers($json){
             include "connection.php";
+
+            $json = json_decode($json, true);
+            
+            $page  = isset($json['page']) ? max(1, (int)$json['page']) : 1;
+            $limit = isset($json['limit']) ? min(100, max(1, (int)$json['limit'])) : 10;
+            $offset = ($page - 1) * $limit;
+
+            //total count para sa ibuild nga pages sa frontend
+            $sqlCount = "SELECT COUNT(*) FROM users";
+            $stmtCount = $conn->prepare($sqlCount);
+            $stmtCount->execute();
+            $totalRows = (int)$stmtCount->fetchColumn();
 
             $sql = "SELECT u.user_id, u.role_id, u.id_number, u.last_name, u.first_name, u.contact_number,
                         u.email_address, u.username, u.department_id,
                         r.role_type, d.department_name, u.is_active
                     FROM users u
                     INNER JOIN roles r ON u.role_id=r.role_id
-                    LEFT JOIN departments d ON u.department_id=d.department_id";
+                    LEFT JOIN departments d ON u.department_id=d.department_id
+                    ORDER BY u.first_name
+                    LIMIT :limit OFFSET :offset";
             $stmt = $conn->prepare($sql);
+            $stmt->bindParam(":limit", $limit, PDO::PARAM_INT);
+            $stmt->bindParam(":offset", $offset, PDO::PARAM_INT);
             $stmt->execute();
             $rs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            return json_encode($rs);
+            return json_encode([
+                "data" => $rs,
+                "total" => $totalRows,
+                "page" => $page,
+                "limit" => $limit,
+                "totalPages" => (int)ceil($totalRows / $limit)
+            ]);
         }
         function addUser($json){
             include "connection.php";
@@ -248,7 +270,7 @@
     $user = new User();
     switch($operation){
         case "getAllUsers":
-            echo $user->getAllUsers();
+            echo $user->getAllUsers($json);
             break;
         case "addUser":
             echo $user->addUser($json);

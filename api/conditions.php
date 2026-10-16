@@ -3,15 +3,37 @@
     header("Access-Control-Allow-Origin: *");
 
     class Condition{
-        function getAllConditions(){
+        function getAllConditions($json){
             include "connection.php";
 
-            $sql = "SELECT * FROM conditions";
+            $json = json_decode($json, true);
+            
+            $page  = isset($json['page']) ? max(1, (int)$json['page']) : 1;
+            $limit = isset($json['limit']) ? min(100, max(1, (int)$json['limit'])) : 10;
+            $offset = ($page - 1) * $limit;
+
+            //total count para sa ibuild nga pages sa frontend
+            $sqlCount = "SELECT COUNT(*) FROM conditions";
+            $stmtCount = $conn->prepare($sqlCount);
+            $stmtCount->execute();
+            $totalRows = (int)$stmtCount->fetchColumn();
+
+            $sql = "SELECT * FROM conditions
+                ORDER BY condition_desc
+                LIMIT :limit OFFSET :offset";
             $stmt = $conn->prepare($sql);
+            $stmt->bindParam(":limit", $limit, PDO::PARAM_INT);
+            $stmt->bindParam(":offset", $offset, PDO::PARAM_INT);
             $stmt->execute();
             $rs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            return json_encode($rs);
+            return json_encode([
+                "data" => $rs,
+                "total" => $totalRows,
+                "page" => $page,
+                "limit" => $limit,
+                "totalPages" => (int)ceil($totalRows / $limit)
+            ]);
         }
         function addCondition($json){
             include "connection.php";
@@ -92,7 +114,7 @@
     $condition = new Condition();
     switch($operation){
         case "getAllConditions":
-            echo $condition->getAllConditions();
+            echo $condition->getAllConditions($json);
             break;
         case "addCondition":
             echo $condition->addCondition($json);

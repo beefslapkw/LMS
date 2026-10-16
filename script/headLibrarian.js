@@ -70,11 +70,15 @@ let activeborrows = [];
 
 document.getElementById('welcome').innerHTML = `Welcome Head Librarian ${sessionStorage.fullname}`;
 
-const getAllDepartments = async() => {
+let currentDepartmentsPage = 1;
+const departmentsPerPage = 10;
+
+const getAllDepartments = async(page = 1) => {
+    currentDepartmentsPage = page;
     const departmentstablediv = document.getElementById('departmentstablediv');
 
     const response = await axios.get(`${url}/departments.php`,{
-        params:{operation:"getAllDepartments"}
+        params:{operation:"getAllDepartments", json: JSON.stringify({ page: page, limit: departmentsPerPage })}
     })
 
     departmentstablediv.innerHTML = '';
@@ -94,7 +98,7 @@ const getAllDepartments = async() => {
     if(response.status == 200){
         console.log(response.data);
         departments = [];
-        response.data.forEach(department => {
+        response.data.data.forEach(department => {
             departments.push(department);
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -110,22 +114,28 @@ const getAllDepartments = async() => {
                 viewDepartment(department.department_id);
             })
             row.querySelector(".update").addEventListener('click', () => {
-                updateDepartment(department.department_id, getAllDepartments);
+                updateDepartment(department.department_id, () => getAllDepartments(currentDepartmentsPage));
             })
         })
         table.appendChild(tbody);
         departmentstablediv.appendChild(table);
+
+        renderPagination(departmentstablediv, response.data.page, response.data.totalPages, getAllDepartments);
     }
     else{
         alert("ERROR");
     }
 }
 
-const getAllRoles = async() => {
+let currentRolesPage = 1;
+const rolesPerPage = 10;
+
+const getAllRoles = async(page = 1) => {
+    currentRolesPage = page;
     const rolestablediv = document.getElementById('rolestablediv');
 
     const response = await axios.get(`${url}/roles.php`,{
-        params:{operation:"getAllRoles"}
+        params:{operation:"getAllRoles", json: JSON.stringify({ page: page, limit: rolesPerPage })}
     })
 
     rolestablediv.innerHTML = '';
@@ -145,7 +155,7 @@ const getAllRoles = async() => {
     if(response.status == 200){
         console.log(response.data);
         roles = [];
-        response.data.forEach(role => {
+        response.data.data.forEach(role => {
             roles.push(role);
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -161,22 +171,28 @@ const getAllRoles = async() => {
                 viewRole(role.role_id);
             })
             row.querySelector(".update").addEventListener('click', () => {
-                updateRole(role.role_id, getAllRoles);
+                updateRole(role.role_id, () => getAllRoles(currentRolesPage));
             })
         })
         table.appendChild(tbody);
         rolestablediv.appendChild(table);
+
+        renderPagination(rolestablediv, response.data.page, response.data.totalPages, getAllRoles);
     }
     else{
         alert("ERROR");
     }
 }
 
-const getAllStatuses = async() => {
+let currentStatusesPage = 1;
+const statusesPerPage = 10;
+
+const getAllStatuses = async(page = 1) => {
+    currentStatusesPage = page;
     const statusestablediv = document.getElementById('statusestablediv');
 
     const response = await axios.get(`${url}/statuses.php`,{
-        params:{operation:"getAllStatuses"}
+        params:{operation:"getAllStatuses", json: JSON.stringify({ page: page, limit: statusesPerPage })}
     })
 
     statusestablediv.innerHTML = '';
@@ -195,7 +211,7 @@ const getAllStatuses = async() => {
 
     if(response.status == 200){
         console.log(response.data);
-        response.data.forEach(status => {
+        response.data.data.forEach(status => {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${status.status_desc}</td>
@@ -210,22 +226,28 @@ const getAllStatuses = async() => {
                 viewStatus(status.status_id);
             })
             row.querySelector(".update").addEventListener('click', () => {
-                updateStatus(status.status_id, getAllStatuses);
+                updateStatus(status.status_id, () => getAllStatuses(currentStatusesPage));
             })
         })
         table.appendChild(tbody);
         statusestablediv.appendChild(table);
+
+        renderPagination(statusestablediv, response.data.page, response.data.totalPages, getAllStatuses);
     }
     else{
         alert("ERROR");
     }
 }
 
-const getAllConditions = async() => {
+let currentConditionsPage = 1;
+const conditionsPerPage = 10;
+
+const getAllConditions = async(page = 1) => {
+    currentConditionsPage = page;
     const conditionstablediv = document.getElementById('conditionstablediv');
 
     const response = await axios.get(`${url}/conditions.php`,{
-        params:{operation:"getAllConditions"}
+        params:{operation:"getAllConditions", json: JSON.stringify({ page: page, limit: conditionsPerPage })}
     })
 
     conditionstablediv.innerHTML = '';
@@ -245,7 +267,7 @@ const getAllConditions = async() => {
     if(response.status == 200){
         conditions = [];
         console.log(response.data);
-        response.data.forEach(condition => {
+        response.data.data.forEach(condition => {
             conditions.push(condition);
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -261,22 +283,28 @@ const getAllConditions = async() => {
                 viewCondition(condition.condition_id);
             })
             row.querySelector(".update").addEventListener('click', () => {
-                updateCondition(condition.condition_id, getAllConditions);
+                updateCondition(condition.condition_id, () => getAllConditions(currentConditionsPage));
             })
         })
         table.appendChild(tbody);
         conditionstablediv.appendChild(table);
+
+        renderPagination(conditionstablediv, response.data.page, response.data.totalPages, getAllConditions);
     }
     else{
         alert("ERROR");
     }
 }
 
-const getAllDisposalReasons = async() => {
+let currentDisposalReasonsPage = 1;
+const disposalReasonsPerPage = 10;
+
+const getAllDisposalReasons = async(page = 1) => {
+    currentDisposalReasonsPage = page;
     const disposalreasonstablediv = document.getElementById('disposalreasonstablediv');
 
     const response = await axios.get(`${url}/disposalreasons.php`,{
-        params:{operation:"getAllDisposalReasons"}
+        params:{operation:"getAllDisposalReasons", json: JSON.stringify({ page: page, limit: disposalReasonsPerPage })}
     })
 
     disposalreasonstablediv.innerHTML = '';
@@ -296,7 +324,7 @@ const getAllDisposalReasons = async() => {
     if(response.status == 200){
         disposalreasons = [];
         console.log(response.data);
-        response.data.forEach(reason => {
+        response.data.data.forEach(reason => {
             disposalreasons.push(reason);
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -312,18 +340,24 @@ const getAllDisposalReasons = async() => {
                 viewDisposalReason(reason.reason_id);
             })
             row.querySelector(".update").addEventListener('click', () => {
-                updateDisposalReason(reason.reason_id, getAllDisposalReasons);
+                updateDisposalReason(reason.reason_id, () => getAllDisposalReasons(currentDisposalReasonsPage));
             })
         })
         table.appendChild(tbody);
         disposalreasonstablediv.appendChild(table);
+
+        renderPagination(disposalreasonstablediv, response.data.page, response.data.totalPages, getAllDisposalReasons);
     }
     else{
         alert("ERROR");
     }
 }
 
-const getAllUsers = async() => {
+let currentUsersPage = 1;
+const usersPerPage = 10;
+
+const getAllUsers = async(page = 1) => {
+    currentUsersPage = page;
     const tablediv = document.getElementById('userstablediv');
 
     tablediv.innerHTML = '';
@@ -347,7 +381,7 @@ const getAllUsers = async() => {
     const tbody = document.createElement('tbody');
 
     const response = await axios.get(`${url}/users.php`,{
-        params:{operation:"getAllUsers"}
+        params:{operation:"getAllUsers", json: JSON.stringify({ page: page, limit: usersPerPage })}
     })
 
     if(response.status == 200){
@@ -355,10 +389,10 @@ const getAllUsers = async() => {
         document.getElementById('userscard').innerHTML = `
             <div class="card text-white shadow-sm p-3" style="background-color: #ff6600;">
                 <small class="text-uppercase fw-semibold">Total User Count</small>
-                <h2 class="display-6 fw-bold my-2 text-center">${response.data.length}</h2>
+                <h2 class="display-6 fw-bold my-2 text-center">${response.data.total}</h2>
             </div>
         `;
-        response.data.forEach(user => { 
+        response.data.data.forEach(user => { 
             let status;
             let statusButtons;
             if(user.is_active == 1){
@@ -390,25 +424,27 @@ const getAllUsers = async() => {
                 viewDetails(user.user_id);
             })
             row.querySelector(".update").addEventListener('click', () => {
-                updateDetails(user.user_id, departments, roles, getAllUsers);
+                updateDetails(user.user_id, departments, roles, () => getAllUsers(currentUsersPage));
             })
 
             const deactivateBtn = row.querySelector(".deactivate");
             if(deactivateBtn){
                 deactivateBtn.addEventListener('click', () => {
-                    deactivateUser(user.user_id, getAllUsers);
+                    deactivateUser(user.user_id, () => getAllUsers(currentUsersPage));
                 })
             }
 
             const reactivateBtn = row.querySelector(".reactivate");
             if(reactivateBtn){
                 reactivateBtn.addEventListener('click', () => {
-                    reactivateUser(user.user_id, getAllUsers);
+                    reactivateUser(user.user_id, () => getAllUsers(currentUsersPage));
                 })
             }
         })
         table.appendChild(tbody);
         tablediv.appendChild(table);
+
+        renderPagination(tablediv, response.data.page, response.data.totalPages, getAllUsers);
     }
     else{
         alert("ERROR");
@@ -653,7 +689,7 @@ const getAllAuthors = async(page = 1) => {
     const authorstablediv = document.getElementById('authorstablediv');
 
     const response = await axios.get(`${url}/authors.php`,{
-        params:{operation:"getAllAuthors"}
+        params:{operation:"getAllAuthors", json: JSON.stringify({ page: page, limit: authorsPerPage })}
     })
 
     authorstablediv.innerHTML = "";
@@ -676,10 +712,10 @@ const getAllAuthors = async(page = 1) => {
         document.getElementById('authorscard').innerHTML = `
             <div class="card text-white shadow-sm p-3" style="background-color: #e68a00;">
                 <small class="text-uppercase fw-semibold">Total Authors Quantity</small>
-                <h2 class="display-6 fw-bold my-2 text-center">${response.data.length}</h2>
+                <h2 class="display-6 fw-bold my-2 text-center">${response.data.total}</h2>
             </div>
         `;
-        response.data.forEach(author => { 
+        response.data.data.forEach(author => { 
             authors.push(author);
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -708,11 +744,15 @@ const getAllAuthors = async(page = 1) => {
     }
 }
 
-const getAllPublishers = async() => {
+let currentPublishersPage = 1;
+const publishersPerPage = 10;
+
+const getAllPublishers = async(page = 1) => {
+    currentPublishersPage = page;
     const publisherstablediv = document.getElementById('publisherstablediv');
 
     const response = await axios.get(`${url}/publishers.php`,{
-        params:{operation:"getAllPublishers"}
+        params:{operation:"getAllPublishers", json: JSON.stringify({ page: page, limit: publishersPerPage })}
     })
 
     publisherstablediv.innerHTML = '';
@@ -731,7 +771,7 @@ const getAllPublishers = async() => {
     if(response.status == 200){
         publishers = [];
         console.log(response.data);
-        response.data.forEach(publisher => { 
+        response.data.data.forEach(publisher => { 
             publishers.push(publisher);
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -747,22 +787,28 @@ const getAllPublishers = async() => {
                 viewPublisher(publisher.publisher_id);
             })
             row.querySelector(".update").addEventListener('click', () => {
-                updatePublisher(publisher.publisher_id, getAllPublishers);
+                updatePublisher(publisher.publisher_id, () => getAllPublishers(currentPublishersPage));
             })
         })
         table.appendChild(tbody);
         publisherstablediv.appendChild(table);
+
+        renderPagination(publisherstablediv, response.data.page, response.data.totalPages, getAllPublishers);
     }
     else{
         alert("ERROR");
     }
 }
 
-const getAllGenres = async() => {
+let currentGenresPage = 1;
+const genresPerPage = 10;
+
+const getAllGenres = async(page = 1) => {
+    currentGenresPage = page;
     const genrestablediv = document.getElementById('genrestablediv');
 
     const response = await axios.get(`${url}/genres.php`,{
-        params:{operation:"getAllGenres"}
+        params:{operation:"getAllGenres", json: JSON.stringify({ page: page, limit: genresPerPage })}
     })
 
     genrestablediv.innerHTML = '';
@@ -782,7 +828,7 @@ const getAllGenres = async() => {
     if(response.status == 200){
         console.log(response.data);
         genres = [];
-        response.data.forEach(genre => {
+        response.data.data.forEach(genre => {
             genres.push(genre);
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -798,22 +844,28 @@ const getAllGenres = async() => {
                 viewGenre(genre.genre_id);
             })
             row.querySelector(".update").addEventListener('click', () => {
-                updateGenre(genre.genre_id, getAllGenres);
+                updateGenre(genre.genre_id, () => getAllGenres(currentGenresPage));
             })
         })
         table.appendChild(tbody);
         genrestablediv.appendChild(table);
+
+        renderPagination(genrestablediv, response.data.page, response.data.totalPages, getAllGenres);
     }
     else{
         alert("ERROR");
     }
 }
 
-const getAllCategories = async() => {
+let currentCategoriesPage = 1;
+const categoriesPerPage = 10;
+
+const getAllCategories = async(page = 1) => {
+    currentCategoriesPage = page;
     const categoriestablediv = document.getElementById('categoriestablediv');
 
     const response = await axios.get(`${url}/categories.php`,{
-        params:{operation:"getAllCategories"}
+        params:{operation:"getAllCategories", json: JSON.stringify({ page: page, limit: categoriesPerPage })}
     })
 
     categoriestablediv.innerHTML = '';
@@ -834,7 +886,7 @@ const getAllCategories = async() => {
     if(response.status == 200){
         categories = [];
         console.log(response.data); 
-        response.data.forEach(category => {
+        response.data.data.forEach(category => {
             categories.push(category);
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -851,11 +903,13 @@ const getAllCategories = async() => {
                 viewCategory(category.category_id);
             })
             row.querySelector(".update").addEventListener('click', () => {
-                updateCategory(category.category_id, getAllCategories);
+                updateCategory(category.category_id, () => getAllCategories(currentCategoriesPage));
             })
         })
         table.appendChild(tbody);
         categoriestablediv.appendChild(table);
+
+        renderPagination(categoriestablediv, response.data.page, response.data.totalPages, getAllCategories);
     }
     else{
         alert("ERROR");
@@ -1259,31 +1313,31 @@ document.addEventListener('DOMContentLoaded', async() => {
         addCopy(() => getAllCopies(currentCopiesPage));
     })
     document.getElementById('addcategory').addEventListener('click', () => {
-        addCategory(getAllCategories);
+    addCategory(() => getAllCategories(currentCategoriesPage));
     })
     document.getElementById('addauthor').addEventListener('click', () => {
-        addAuthor(getAllAuthors);
+        addAuthor(() => getAllAuthors(currentAuthorsPage));
     }) 
     document.getElementById('addpublisher').addEventListener('click', () => {
-        addPublisher(getAllPublishers);
+        addPublisher(() => getAllPublishers(currentPublishersPage));
     })
     document.getElementById('addgenre').addEventListener('click', () => {
-        addGenre(getAllGenres);
+        addGenre(() => getAllGenres(currentGenresPage));
     })
     document.getElementById('adddepartment').addEventListener('click', () => {
-        addDepartment(getAllDepartments);
+        addDepartment(() => getAllDepartments(currentDepartmentsPage));
     })
     document.getElementById('addrole').addEventListener('click', () => {
-        addRole(getAllRoles);
+        addRole(() => getAllRoles(currentRolesPage));
     })
     document.getElementById('addstatus').addEventListener('click', () => {
-        addStatus(getAllStatuses);
+        addStatus(() => getAllStatuses(currentStatusesPage));
     })
     document.getElementById('addcondition').addEventListener('click', () => {
-        addCondition(getAllConditions);
+        addCondition(() => getAllConditions(currentConditionsPage));
     })
     document.getElementById('adddisposalreason').addEventListener('click', () => {
-        addDisposalReason(getAllDisposalReasons);
+        addDisposalReason(() => getAllDisposalReasons(currentDisposalReasonsPage));
     })
 
     getAllUsers();
