@@ -115,16 +115,200 @@ document.getElementById('searchbar').addEventListener('input', (e) => {
     renderCatalog({ ...allBooks, data: filtered });
 });
 
-const getMyBorrowedBooks = async() => {
+let currentBorrowedPage = 1;
+const borrowedPerPage = 10;
+let borrowedfilter = 'all';
+
+const borrowedStatusBadges = {
+    active:   '<span class="badge bg-success">Active</span>',
+    overdue:  '<span class="badge bg-danger">Overdue</span>',
+    returned: '<span class="badge bg-secondary">Returned</span>'
+};
+
+const getMyBorrowedBooks = async(page = 1) => {
+    currentBorrowedPage = page;
     const borrowedtablediv = document.getElementById('borrowedtablediv');
-    borrowedtablediv.innerHTML = `<p class="text-muted">WIP.</p>`;
-    document.getElementById('borrowedcount').innerText = "-";
+
+    const response = await axios.get(`${url}/student.php`,{
+        params:{operation:"getBorrowedBooks", json: JSON.stringify({ user_id: sessionStorage.userId, status: borrowedfilter, page: page, limit: borrowedPerPage })}
+    })
+
+    borrowedtablediv.innerHTML = '';
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+        <tr>
+            <th>Accession Number</th>
+            <th>Book Title</th>
+            <th>Borrowed At</th>
+            <th>Due Date</th>
+            <th>Returned At</th>
+            <th>Processed By</th>
+            <th>Status</th>
+        </tr>
+    `;
+    table.appendChild(thead);
+    table.classList.add("table", "table-hover", "table-striped", "table-sm");
+    const tbody = document.createElement('tbody');
+
+    console.log(response.data);
+    if(response.status == 200){
+        console.log(response.data);
+        if(response.data.data.length === 0){
+            const empty = document.createElement('tr');
+            empty.innerHTML = `<td colspan="7" class="text-center text-muted py-3">No borrowed books found.</td>`;
+            tbody.appendChild(empty);
+        }
+        response.data.data.forEach(borrow => {
+            let returnedAt;
+            if(!borrow.returned_at){
+                returnedAt = "-";
+            }
+            else{
+                returnedAt = borrow.returned_at;
+            }
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${borrow.accession_number}</td>
+                <td>${borrow.book_title}</td>
+                <td>${borrow.borrowed_at}</td>
+                <td>${borrow.expires_at}</td>
+                <td>${returnedAt}</td>
+                <td>${borrow.processed_by_first_name + " " + borrow.processed_by_last_name}</td>
+                <td>${borrowedStatusBadges[borrow.status]}</td>
+            `;
+            tbody.appendChild(row);
+        })
+        table.appendChild(tbody);
+        borrowedtablediv.appendChild(table);
+
+        renderPagination(borrowedtablediv, response.data.page, response.data.totalPages, getMyBorrowedBooks);
+    }
+    else{
+        alert("ERROR");
+    }
 }
 
-const getMyFines = async() => {
+let currentFinesPage = 1;
+const finesPerPage = 10;
+
+const getMyFines = async(page = 1) => {
+    currentFinesPage = page;
     const finestablediv = document.getElementById('finestablediv');
-    finestablediv.innerHTML = `<p class="text-muted">WIP.</p>`;
-    document.getElementById('finecount').innerText = "-";
+
+    const response = await axios.get(`${url}/student.php`,{
+        params:{operation:"getFines", json: JSON.stringify({ user_id: sessionStorage.userId, status: 'unpaid', page: page, limit: finesPerPage })}
+    })
+
+    finestablediv.innerHTML = '';
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+        <tr>
+            <th>Accession Number</th>
+            <th>Book Title</th>
+            <th>Days Late</th>
+            <th>Fine Amount</th>
+        </tr>
+    `;
+    table.appendChild(thead);
+    table.classList.add("table", "table-hover", "table-striped", "table-sm");
+    const tbody = document.createElement('tbody');
+
+    if(response.status == 200){
+        console.log(response.data);
+        if(response.data.data.length === 0){
+            const empty = document.createElement('tr');
+            empty.innerHTML = `<td colspan="4" class="text-center text-muted py-3">No unpaid fines.</td>`;
+            tbody.appendChild(empty);
+        }
+        response.data.data.forEach(fine => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${fine.accession_number}</td>
+                <td>${fine.book_title}</td>
+                <td>${fine.days_late}</td>
+                <td>${fine.fine_amount}</td>
+            `;
+            tbody.appendChild(row);
+        })
+        table.appendChild(tbody);
+        finestablediv.appendChild(table);
+
+        renderPagination(finestablediv, response.data.page, response.data.totalPages, getMyFines);
+    }
+    else{
+        alert("ERROR");
+    }
+}
+
+let currentPaymentsPage = 1;
+const paymentsPerPage = 10;
+
+const getPaymentHistory = async(page = 1) => {
+    currentPaymentsPage = page;
+    const paymenthistorytablediv = document.getElementById('paymenthistorytablediv');
+
+    const response = await axios.get(`${url}/student.php`,{
+        params:{operation:"getFines", json: JSON.stringify({ user_id: sessionStorage.userId, status: 'paid', page: page, limit: paymentsPerPage })}
+    })
+
+    paymenthistorytablediv.innerHTML = '';
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+        <tr>
+            <th>Accession Number</th>
+            <th>Book Title</th>
+            <th>Days Late</th>
+            <th>Fine Amount</th>
+            <th>Paid At</th>
+        </tr>
+    `;
+    table.appendChild(thead);
+    table.classList.add("table", "table-hover", "table-striped", "table-sm");
+    const tbody = document.createElement('tbody');
+
+    if(response.status == 200){
+        console.log(response.data);
+        if(response.data.data.length === 0){
+            const empty = document.createElement('tr');
+            empty.innerHTML = `<td colspan="5" class="text-center text-muted py-3">No payment history.</td>`;
+            tbody.appendChild(empty);
+        }
+        response.data.data.forEach(fine => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${fine.accession_number}</td>
+                <td>${fine.book_title}</td>
+                <td>${fine.days_late}</td>
+                <td>${fine.fine_amount}</td>
+                <td>${fine.paid_at}</td>
+            `;
+            tbody.appendChild(row);
+        })
+        table.appendChild(tbody);
+        paymenthistorytablediv.appendChild(table);
+
+        renderPagination(paymenthistorytablediv, response.data.page, response.data.totalPages, getPaymentHistory);
+    }
+    else{
+        alert("ERROR");
+    }
+}
+
+const getFineBalance = async() => {
+    const response = await axios.get(`${url}/student.php`,{
+        params:{operation:"getFineBalance", json: JSON.stringify({ user_id: sessionStorage.userId })}
+    })
+
+    if(response.status == 200){
+        console.log(response.data);
+        document.getElementById('finebalance').innerText = Number(response.data.balance).toFixed(2);
+    }
 }
 
 const getAvailableCount = async() => {
@@ -137,9 +321,26 @@ const getAvailableCount = async() => {
     }
 }
 
+const getBorrowedCount = async() => {
+    const response = await axios.get(`${url}/student.php`,{
+        params:{operation:"getBorrowedCount", json: JSON.stringify({ user_id: sessionStorage.userId })}
+    })
+
+    if(response.status == 200){
+        document.getElementById('borrowedcount').innerText = response.data;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     getCatalog();
+    document.getElementById('borrowedfilter').addEventListener('change', (e) => {
+        borrowedfilter = e.target.value;
+        getMyBorrowedBooks(1);
+    })
     getMyBorrowedBooks();
+    getBorrowedCount();
     getMyFines();
+    getPaymentHistory();
+    getFineBalance();
     getAvailableCount();
 })
