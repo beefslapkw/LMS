@@ -491,13 +491,18 @@ const renderPagination = (container, curPage, totalPages, goTo) => {
 
 let currentBooksPage = 1;
 const booksPerPage = 10;
+let booksearch = '';
+let booksearchtimer;
 
 const getAllBooks = async(page = 1) => {
     currentBooksPage = page;
     const bookstablediv = document.getElementById('bookstablediv');
 
     const response = await axios.get(`${url}/books.php`,{
-        params:{operation:"getAllBooks", json: JSON.stringify({ page: page, limit: booksPerPage })}
+        params:{
+            operation: booksearch ? "searchBooks" : "getAllBooks",
+            json: JSON.stringify({ page: page, limit: booksPerPage, search: booksearch })
+        }
     })
 
     bookstablediv.innerHTML = '';
@@ -596,13 +601,18 @@ const getAllBooks = async(page = 1) => {
 
 let currentCopiesPage = 1;
 const copiesPerPage = 10;
+let copysearch = '';
+let copysearchtimer;
 
 const getAllCopies = async(page = 1) => {
     currentCopiesPage = page;
     const copiestablediv = document.getElementById('copiestablediv');
 
     const response = await axios.get(`${url}/bookcopies.php`,{
-        params:{operation:"getAllCopies", json: JSON.stringify({ page: page, limit: copiesPerPage })}
+        params:{
+            operation: copysearch ? "searchCopies" : "getAllCopies",
+            json: JSON.stringify({ page: page, limit: copiesPerPage, search: copysearch })
+        }
     })
 
     copiestablediv.innerHTML = '';
@@ -1309,8 +1319,22 @@ document.addEventListener('DOMContentLoaded', async() => {
     document.getElementById('addbook').addEventListener('click', () => {
         addBook(authors, categories, genres, publishers, () => getAllBooks(currentBooksPage));
     })
+    document.getElementById('booksearch').addEventListener('input', (e) => {
+        clearTimeout(booksearchtimer);
+        booksearchtimer = setTimeout(() => {
+            booksearch = e.target.value.trim();
+            getAllBooks(1);
+        }, 300);
+    })
     document.getElementById('addcopy').addEventListener('click', () => {
         addCopy(() => getAllCopies(currentCopiesPage));
+    })
+    document.getElementById('copysearch').addEventListener('input', (e) => {
+        clearTimeout(copysearchtimer);
+        copysearchtimer = setTimeout(() => {
+            copysearch = e.target.value.trim();
+            getAllCopies(1);
+        }, 300);
     })
     document.getElementById('addcategory').addEventListener('click', () => {
     addCategory(() => getAllCategories(currentCategoriesPage));

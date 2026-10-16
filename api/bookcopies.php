@@ -169,6 +169,58 @@
 
             return json_encode($stmt->fetch(PDO::FETCH_ASSOC));
         }
+        function searchCopies($json){
+            include "connection.php";
+
+            $json = json_decode($json, true);
+            $search = isset($json['search']) ? trim($json['search']) : "";
+            $page  = isset($json['page']) ? max(1, (int)$json['page']) : 1;
+            $limit = isset($json['limit']) ? min(100, max(1, (int)$json['limit'])) : 10;
+            $offset = ($page - 1) * $limit;
+
+            $joins = "FROM book_copies bc
+                INNER JOIN books b ON bc.book_id = b.book_id
+                INNER JOIN conditions c ON bc.condition_id = c.condition_id
+                INNER JOIN statuses s ON bc.status_id = s.status_id
+                INNER JOIN users u ON bc.added_by = u.user_id";
+
+            $where = "WHERE (b.book_title LIKE :s1
+                        OR bc.accession_number LIKE :s2
+                        OR c.condition_desc LIKE :s3
+                        OR bc.condition_notes LIKE :s4
+                        OR s.status_desc LIKE :s5)";
+
+            $like = "%" . $search . "%";
+
+            $stmtCount = $conn->prepare("SELECT COUNT(*) $joins $where");
+            for($i = 1; $i <= 5; $i++){
+                $stmtCount->bindValue(":s$i", $like);
+            }
+            $stmtCount->execute();
+            $totalRows = (int)$stmtCount->fetchColumn();
+
+            $sql = "SELECT bc.copy_id, b.book_title, bc.accession_number,
+                        c.condition_desc, bc.condition_notes,
+                        u.first_name, u.last_name, bc.added_at, s.status_desc
+                    $joins $where
+                    ORDER BY b.book_title, bc.accession_number
+                    LIMIT :limit OFFSET :offset";
+            $stmt = $conn->prepare($sql);
+            for($i = 1; $i <= 5; $i++){
+                $stmt->bindValue(":s$i", $like);
+            }
+            $stmt->bindValue(":limit", $limit, PDO::PARAM_INT);
+            $stmt->bindValue(":offset", $offset, PDO::PARAM_INT);
+            $stmt->execute();
+
+            return json_encode([
+                "data" => $stmt->fetchAll(PDO::FETCH_ASSOC),
+                "total" => $totalRows,
+                "page" => $page,
+                "limit" => $limit,
+                "totalPages" => (int)ceil($totalRows / $limit)
+            ]);
+        }
         function getAvailableCount(){
             include "connection.php";
 
@@ -211,6 +263,9 @@
             break;
         case "getCopyByAccession":
             echo $bookcopy->getCopyByAccession($json);
+            break;
+        case "searchCopies":
+            echo $bookcopy->searchCopies($json);
             break;
         case "getAvailableCount":
             echo $bookcopy->getAvailableCount();

@@ -252,6 +252,67 @@
 
             return json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
         }
+        function searchBooks($json){
+            include "connection.php";
+
+            $json = json_decode($json, true);
+            $search = isset($json['search']) ? trim($json['search']) : "";
+            $page  = isset($json['page']) ? max(1, (int)$json['page']) : 1;
+            $limit = isset($json['limit']) ? min(100, max(1, (int)$json['limit'])) : 10;
+            $offset = ($page - 1) * $limit;
+
+            $where = "WHERE (b.book_title LIKE :s1
+                        OR g.genre_name LIKE :s2
+                        OR c.category_type LIKE :s3
+                        OR p.publisher_name LIKE :s4
+                        OR b.shelf_location LIKE :s5
+                        OR EXISTS (
+                            SELECT 1 FROM book_authors ba
+                            INNER JOIN authors a ON a.author_id = ba.author_id
+                            WHERE ba.book_id = b.book_id AND a.author_name LIKE :s6
+                        ))";
+
+            $joins = "FROM books b
+                INNER JOIN genres g ON b.genre_id = g.genre_id
+                INNER JOIN categories c ON b.category_id = c.category_id
+                INNER JOIN publishers p ON b.publisher_id = p.publisher_id
+                INNER JOIN users u ON b.added_by = u.user_id";
+
+            $like = "%" . $search . "%";
+
+            $stmtCount = $conn->prepare("SELECT COUNT(*) $joins $where");
+            for($i = 1; $i <= 6; $i++){
+                $stmtCount->bindValue(":s$i", $like);
+            }
+            $stmtCount->execute();
+            $totalRows = (int)$stmtCount->fetchColumn();
+
+            $sql = "SELECT b.book_id, b.book_title, g.genre_name, c.category_type,
+                        b.shelf_location, p.publisher_name, u.first_name, u.last_name,
+                        b.added_at, b.is_active,
+                        (SELECT GROUP_CONCAT(a2.author_name SEPARATOR ', ')
+                        FROM book_authors ba2
+                        INNER JOIN authors a2 ON a2.author_id = ba2.author_id
+                        WHERE ba2.book_id = b.book_id) AS authors
+                    $joins $where
+                    ORDER BY b.book_title
+                    LIMIT :limit OFFSET :offset";
+            $stmt = $conn->prepare($sql);
+            for($i = 1; $i <= 6; $i++){
+                $stmt->bindValue(":s$i", $like);
+            }
+            $stmt->bindValue(":limit", $limit, PDO::PARAM_INT);
+            $stmt->bindValue(":offset", $offset, PDO::PARAM_INT);
+            $stmt->execute();
+
+            return json_encode([
+                "data" => $stmt->fetchAll(PDO::FETCH_ASSOC),
+                "total" => $totalRows,
+                "page" => $page,
+                "limit" => $limit,
+                "totalPages" => (int)ceil($totalRows / $limit)
+            ]);
+        }
     }
 
     if($_SERVER['REQUEST_METHOD'] == 'GET'){
@@ -285,6 +346,9 @@
             break;
         case "getBookOptions":
             echo $book->getBookOptions($json);
+            break;
+        case "searchBooks":
+            echo $book->searchBooks($json);
             break;
     }
 ?>
