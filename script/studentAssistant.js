@@ -11,27 +11,133 @@ import { reactivateBook } from "./bookmodules/reactivate.js";
 import { addCopy } from "./bookcopymodules/add.js";
 import { viewCopy } from "./bookcopymodules/view.js";
 import { updateCopy } from "./bookcopymodules/update.js";
-import { disposeCopy } from "./bookcopymodules/dispose.js";
+
+import { addAuthor } from "./authorsmodules/add.js";
+import { viewAuthor } from "./authorsmodules/view.js";
+import { updateAuthor } from "./authorsmodules/update.js";
+
+import { addPublisher } from "./publishermodules/add.js";
+import { viewPublisher } from "./publishermodules/view.js";
+import { updatePublisher } from "./publishermodules/update.js";
+
+//walay users, disposal, ug uban nga lookup tables diri bords kay head librarian ra ang mo-manage ana
 
 const url = `${location.origin}/LMS/api`;
 sessionStorage.setItem("url", url);
-let genres = [];
-let categories = [];
-let copies = [];
 let authors = [];
+let categories = [];
+let genres = [];
 let publishers = [];
 let conditions = [];
-let disposalreasons = [];
-let allborrows = [];
 let activeborrows = [];
 
 document.getElementById('welcome').innerHTML = `Welcome Student Assistant ${sessionStorage.fullname}`;
 
-const getAllBooks = async() => {
+//container - ang div, curPage - ang current page, totalPages - ang total rows/limit gikan sa api, goTo - ang function (ex: getAllBooks)
+const renderPagination = (container, curPage, totalPages, goTo) => {
+    if(totalPages <= 1) return;
+
+    const pagination = document.createElement('div');
+    pagination.classList.add('d-flex', 'justify-content-center', 'gap-2', 'mt-2');
+
+    const addBtn = (label, page, active = false, disabled = false) => {
+        const btn = document.createElement('button');
+        btn.textContent = label;
+        btn.className = active ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline-secondary';
+        btn.disabled = disabled;
+        btn.addEventListener('click', () => goTo(page));
+        pagination.appendChild(btn);
+    };
+
+    addBtn('Prev', curPage - 1, false, curPage <= 1);
+
+    const start = Math.max(1, curPage - 2);
+    const end = Math.min(totalPages, curPage + 2);
+
+    if(start > 1){
+        addBtn('1', 1);
+        if(start > 2) addBtn('...', curPage, false, true);
+    }
+    for(let i = start; i <= end; i++){
+        addBtn(i, i, i === curPage);
+    }
+    if(end < totalPages){
+        if(end < totalPages - 1) addBtn('...', curPage, false, true);
+        addBtn(totalPages, totalPages);
+    }
+
+    addBtn('Next', curPage + 1, false, curPage >= totalPages);
+
+    container.appendChild(pagination);
+};
+
+//========================= LOOKUPS (para sa dropdown sa modals, walay table) =========================
+const getAllGenres = async() => {
+    const response = await axios.get(`${url}/genres.php`,{
+        params:{operation:"getAllGenres", json: JSON.stringify({ page: 1, limit: 100 })}
+    })
+
+    if(response.status == 200){
+        console.log(response.data);
+        genres = [];
+        response.data.data.forEach(genre => {
+            genres.push(genre);
+        })
+    }
+    else{
+        alert("ERROR");
+    }
+}
+
+const getAllCategories = async() => {
+    const response = await axios.get(`${url}/categories.php`,{
+        params:{operation:"getAllCategories", json: JSON.stringify({ page: 1, limit: 100 })}
+    })
+
+    if(response.status == 200){
+        console.log(response.data);
+        categories = [];
+        response.data.data.forEach(category => {
+            categories.push(category);
+        })
+    }
+    else{
+        alert("ERROR");
+    }
+}
+
+const getAllConditions = async() => {
+    const response = await axios.get(`${url}/conditions.php`,{
+        params:{operation:"getAllConditions", json: JSON.stringify({ page: 1, limit: 100 })}
+    })
+
+    if(response.status == 200){
+        console.log(response.data);
+        conditions = [];
+        response.data.data.forEach(condition => {
+            conditions.push(condition);
+        })
+    }
+    else{
+        alert("ERROR");
+    }
+}
+
+//========================= BOOKS =========================
+let currentBooksPage = 1;
+const booksPerPage = 10;
+let booksearch = '';
+let booksearchtimer;
+
+const getAllBooks = async(page = 1) => {
+    currentBooksPage = page;
     const bookstablediv = document.getElementById('bookstablediv');
 
     const response = await axios.get(`${url}/books.php`,{
-        params:{operation:"getAllBooks"}
+        params:{
+            operation: booksearch ? "searchBooks" : "getAllBooks",
+            json: JSON.stringify({ page: page, limit: booksPerPage, search: booksearch })
+        }
     })
 
     bookstablediv.innerHTML = '';
@@ -61,10 +167,10 @@ const getAllBooks = async() => {
         document.getElementById('bookscard').innerHTML = `
             <div class="card text-white shadow-sm p-3" style="background-color: #006666;">
                 <small class="text-uppercase fw-semibold">Total Books Quantity</small>
-                <h2 class="display-6 fw-bold my-2 text-center">${response.data.length}</h2>
+                <h2 class="display-6 fw-bold my-2 text-center">${response.data.total}</h2>
             </div>
         `;
-        response.data.forEach(book => { 
+        response.data.data.forEach(book => { 
             let status;
             let statusButtons;
             if(book.is_active == 1){
@@ -97,37 +203,51 @@ const getAllBooks = async() => {
             row.querySelector(".view").addEventListener('click', () => {
                 viewBook(book.book_id);
             })
+
+            //mabalik sa current page imbes page 1
             row.querySelector(".update").addEventListener('click', () => {
-                updateBook(book.book_id, authors, categories, genres, publishers, getAllBooks);
+                updateBook(book.book_id, authors, categories, genres, publishers, () => getAllBooks(currentBooksPage));
             })
             
             const deactivateBtn = row.querySelector(".deactivate");
             if(deactivateBtn){
                 deactivateBtn.addEventListener('click', () => {
-                    deactivateBook(book.book_id, getAllBooks);
+                    deactivateBook(book.book_id, () => getAllBooks(currentBooksPage));
                 })
             }
             
             const reactivateBtn = row.querySelector(".reactivate");
             if(reactivateBtn){
                 reactivateBtn.addEventListener('click', () => {
-                    reactivateBook(book.book_id, getAllBooks);
+                    reactivateBook(book.book_id, () => getAllBooks(currentBooksPage));
                 })
             }
         })
         table.appendChild(tbody);
         bookstablediv.appendChild(table);
+
+        renderPagination(bookstablediv, response.data.page, response.data.totalPages, getAllBooks);
     }
     else{
         alert("ERROR");
     }
 }
 
-const getAllCopies = async() => {
+//========================= BOOK COPIES =========================
+let currentCopiesPage = 1;
+const copiesPerPage = 10;
+let copysearch = '';
+let copysearchtimer;
+
+const getAllCopies = async(page = 1) => {
+    currentCopiesPage = page;
     const copiestablediv = document.getElementById('copiestablediv');
 
     const response = await axios.get(`${url}/bookcopies.php`,{
-        params:{operation:"getAllCopies"}
+        params:{
+            operation: copysearch ? "searchCopies" : "getAllCopies",
+            json: JSON.stringify({ page: page, limit: copiesPerPage, search: copysearch })
+        }
     })
 
     copiestablediv.innerHTML = '';
@@ -155,11 +275,10 @@ const getAllCopies = async() => {
         document.getElementById('copiescard').innerHTML = `
             <div class="card text-white shadow-sm p-3" style="background-color: #00a8a8;">
                 <small class="text-uppercase fw-semibold">Total Book Copies Quantity</small>
-                <h2 class="display-6 fw-bold my-2 text-center">${response.data.length}</h2>
+                <h2 class="display-6 fw-bold my-2 text-center">${response.data.total}</h2>
             </div>
         `;
-        response.data.forEach(copy => { 
-            copies.push(copy);
+        response.data.data.forEach(copy => { 
             let condition;
             if(!copy.condition_notes){
                 condition = "N/A";
@@ -179,7 +298,6 @@ const getAllCopies = async() => {
                 <td>
                     <button class="btn btn-secondary btn-sm view">View</button>
                     <button class="btn btn-success btn-sm update">Update</button>
-                    <button class="btn btn-danger btn-sm dispose">Dispose</button>
                 </td>
             `;
             tbody.appendChild(row);
@@ -187,34 +305,42 @@ const getAllCopies = async() => {
             row.querySelector(".view").addEventListener('click', () => {
                 viewCopy(copy.copy_id);
             })
+
+            //mabalik sa current page imbes page 1
             row.querySelector(".update").addEventListener('click', () => {
-                updateCopy(copy.copy_id, conditions, getAllCopies);
-            })
-            row.querySelector(".dispose").addEventListener('click', () => {
-                disposeCopy(copy.copy_id, disposalreasons, 3, getAllCopies);
+                updateCopy(copy.copy_id, conditions, () => getAllCopies(currentCopiesPage));
             })
         })
         table.appendChild(tbody);
         copiestablediv.appendChild(table);
+
+        renderPagination(copiestablediv, response.data.page, response.data.totalPages, getAllCopies);
     }
     else{
         alert("ERROR");
     }
 }
 
-const getAllAuthors = async() => {
+//========================= AUTHORS =========================
+let currentAuthorsPage = 1;
+const authorsPerPage = 10;
+
+const getAllAuthors = async(page = 1) => {
+    currentAuthorsPage = page;
     const authorstablediv = document.getElementById('authorstablediv');
 
     const response = await axios.get(`${url}/authors.php`,{
-        params:{operation:"getAllAuthors"}
+        params:{operation:"getAllAuthors", json: JSON.stringify({ page: page, limit: authorsPerPage })}
     })
+
+    authorstablediv.innerHTML = "";
 
     const table = document.createElement('table');
     const thead = document.createElement('thead');
     thead.innerHTML = `
         <tr>
-            <th>Author ID</th>
             <th>Author Name</th>
+            <th>Actions</th>
         </tr>
     `;
     table.appendChild(thead);
@@ -222,43 +348,63 @@ const getAllAuthors = async() => {
     const tbody = document.createElement('tbody');
 
     if(response.status == 200){
+        authors = [];
         console.log(response.data);
         document.getElementById('authorscard').innerHTML = `
             <div class="card text-white shadow-sm p-3" style="background-color: #e68a00;">
                 <small class="text-uppercase fw-semibold">Total Authors Quantity</small>
-                <h2 class="display-6 fw-bold my-2 text-center">${response.data.length}</h2>
+                <h2 class="display-6 fw-bold my-2 text-center">${response.data.total}</h2>
             </div>
         `;
-        response.data.forEach(author => { 
+        response.data.data.forEach(author => { 
             authors.push(author);
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${author.author_id}</td>
                 <td>${author.author_name}</td>
+                <td>
+                    <button class="btn btn-secondary btn-sm view">View</button>
+                    <button class="btn btn-success btn-sm update">Update</button>
+                </td>
             `;
             tbody.appendChild(row);
+
+            row.querySelector(".view").addEventListener('click', () => {
+                viewAuthor(author.author_id);
+            })
+            row.querySelector(".update").addEventListener('click', () => {
+                updateAuthor(author.author_id, () => getAllAuthors(currentAuthorsPage));
+            })
         })
         table.appendChild(tbody);
         authorstablediv.appendChild(table);
+
+        renderPagination(authorstablediv, response.data.page, response.data.totalPages, getAllAuthors);
     }
     else{
         alert("ERROR");
     }
 }
 
-const getAllPublishers = async() => {
+//========================= PUBLISHERS =========================
+let currentPublishersPage = 1;
+const publishersPerPage = 10;
+
+const getAllPublishers = async(page = 1) => {
+    currentPublishersPage = page;
     const publisherstablediv = document.getElementById('publisherstablediv');
 
     const response = await axios.get(`${url}/publishers.php`,{
-        params:{operation:"getAllPublishers"}
+        params:{operation:"getAllPublishers", json: JSON.stringify({ page: page, limit: publishersPerPage })}
     })
+
+    publisherstablediv.innerHTML = '';
 
     const table = document.createElement('table');
     const thead = document.createElement('thead');
     thead.innerHTML = `
         <tr>
-            <th>Publisher ID</th>
             <th>Publisher Name</th>
+            <th>Actions</th>
         </tr>
     `;
     table.appendChild(thead);
@@ -266,167 +412,136 @@ const getAllPublishers = async() => {
     const tbody = document.createElement('tbody');
 
     if(response.status == 200){
+        publishers = [];
         console.log(response.data);
         document.getElementById('publisherscard').innerHTML = `
             <div class="card text-white shadow-sm p-3" style="background-color: #00a8a8;">
                 <small class="text-uppercase fw-semibold">Total Publishers Quantity</small>
-                <h2 class="display-6 fw-bold my-2 text-center">${response.data.length}</h2>
+                <h2 class="display-6 fw-bold my-2 text-center">${response.data.total}</h2>
             </div>
         `;
-        response.data.forEach(publisher => { 
+        response.data.data.forEach(publisher => { 
             publishers.push(publisher);
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${publisher.publisher_id}</td>
                 <td>${publisher.publisher_name}</td>
+                <td>
+                    <button class="btn btn-secondary btn-sm view">View</button>
+                    <button class="btn btn-success btn-sm update">Update</button>
+                </td>
             `;
             tbody.appendChild(row);
+
+            row.querySelector(".view").addEventListener('click', () => {
+                viewPublisher(publisher.publisher_id);
+            })
+            row.querySelector(".update").addEventListener('click', () => {
+                updatePublisher(publisher.publisher_id, () => getAllPublishers(currentPublishersPage));
+            })
         })
         table.appendChild(tbody);
         publisherstablediv.appendChild(table);
+
+        renderPagination(publisherstablediv, response.data.page, response.data.totalPages, getAllPublishers);
     }
     else{
         alert("ERROR");
     }
 }
 
-const getAllGenres = async() => {
-    const response = await axios.get(`${url}/genres.php`,{
-        params:{operation:"getAllGenres"}
-    })
+//========================= BORROWS =========================
+let currentBorrowsPage = 1;
+const borrowsPerPage = 10;
+let borrowfilter = 'active'; 
 
-    if(response.status == 200){
-        console.log(response.data);
-        response.data.forEach(genre => {
-            genres.push(genre);
-        })
-    }
-    else{
-        alert("ERROR");
-    }
-}
+const borrowStatusBadges = {
+    active:   '<span class="badge bg-success">Active</span>',
+    overdue:  '<span class="badge bg-danger">Overdue</span>',
+    returned: '<span class="badge bg-secondary">Returned</span>'
+};
 
-const getAllCategories = async() => {
-    const response = await axios.get(`${url}/categories.php`,{
-        params:{operation:"getAllCategories"}
-    })
-
-    if(response.status == 200){
-        console.log(response.data);
-        response.data.forEach(category => {
-            categories.push(category);
-        })
-    }
-    else{
-        alert("ERROR");
-    }
-}
-
-const getAllConditions = async() => {
-    const response = await axios.get(`${url}/conditions.php`,{
-        params:{operation:"getAllConditions"}
-    })
-
-    if(response.status == 200){
-        console.log(response.data);
-        response.data.forEach(condition => {
-            conditions.push(condition);
-        })
-    }
-    else{
-        alert("ERROR");
-    }
-}
-
-const getAllDisposalReasons = async() => {
-    const response = await axios.get(`${url}/disposalreasons.php`,{
-        params:{operation: "getAllDisposalReasons"}
-    })
-
-    if(response.status == 200){
-        console.log(response.data);
-        response.data.forEach(reason => {
-            disposalreasons.push(reason);
-        })
-    }
-    else{
-        alert("ERROR");
-    }
-}
-
-const getAllBorrows = async() => {
+const getAllBorrows = async(page = 1) => {
+    currentBorrowsPage = page;
     const borrowstablediv = document.getElementById('borrowstablediv');
 
-    const response = await axios.get(`${url}/borrowtransactions.php`,{
-        params:{operation:"getAllBorrowTransactions"}
-    })
+    try{
+        const [response, outstanding] = await Promise.all([
+            axios.get(`${url}/borrowtransactions.php`,{
+                params:{operation:"getAllBorrowTransactions", json: JSON.stringify({ page: page, limit: borrowsPerPage, status: borrowfilter })}
+            }),
+            axios.get(`${url}/borrowtransactions.php`,{
+                params:{operation:"getAllBorrowTransactions", json: JSON.stringify({ status: 'outstanding' })}
+            })
+        ]);
 
-    borrowstablediv.innerHTML = '';
+        if(response.status == 200 && outstanding.status == 200){
+            activeborrows = outstanding.data.data;
 
-    const table = document.createElement('table');
-    const thead = document.createElement('thead');
-    thead.innerHTML = `
-        <tr>
-            <th>Accession Number</th>
-            <th>Book Title</th>
-            <th>Borrower</th>
-            <th>Borrowed At</th>
-            <th>Due Date</th>
-            <th>Processed By</th>
-            <th>Status</th>
-        </tr>
-    `;
-    table.appendChild(thead);
-    table.classList.add("table", "table-hover", "table-striped", "table-sm");
-    const tbody = document.createElement('tbody');
+            borrowstablediv.innerHTML = '';
 
-    if(response.status == 200){
-        console.log(response.data);
-
-        allborrows = response.data;
-        activeborrows = allborrows.filter(item => item.is_returned == 0);
-
-        response.data.forEach(transaction => { 
-            let status;
-            if(transaction.is_returned == 1){
-                status = "Returned";
-            }
-            else{
-                const now = new Date();
-                const dueDate = new Date(transaction.expires_at);
-
-                if(now > dueDate){
-                    status = "Overdue";
-                }
-                else{
-                    status = "Active";
-                }
-            }
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${transaction.accession_number}</td>
-                <td>${transaction.book_title}</td>
-                <td>${transaction.borrower_first_name + " " + transaction.borrower_last_name}</td>
-                <td>${transaction.borrowed_at}</td>
-                <td>${transaction.expires_at}</td>
-                <td>${transaction.processed_by_first_name + " " + transaction.processed_by_last_name}</td>
-                <td>${status}</td>
+            const table = document.createElement('table');
+            table.classList.add("table", "table-hover", "table-striped", "table-sm");
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Accession Number</th>
+                        <th>Book Title</th>
+                        <th>Borrower</th>
+                        <th>Borrowed At</th>
+                        <th>Due Date</th>
+                        <th>Processed By</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
             `;
-            tbody.appendChild(row);
-        })
-        table.appendChild(tbody);
-        borrowstablediv.appendChild(table);
+            const tbody = document.createElement('tbody');
+
+            if(response.data.data.length === 0){
+                const empty = document.createElement('tr');
+                empty.innerHTML = `<td colspan="7" class="text-center text-muted py-3">No ${borrowfilter === 'all' ? '' : borrowfilter + ' '}borrows found.</td>`;
+                tbody.appendChild(empty);
+            }
+
+            response.data.data.forEach(transaction => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${transaction.accession_number}</td>
+                    <td>${transaction.book_title}</td>
+                    <td>${transaction.borrower_first_name + " " + transaction.borrower_last_name}</td>
+                    <td>${transaction.borrowed_at}</td>
+                    <td>${transaction.expires_at}</td>
+                    <td>${transaction.processed_by_first_name + " " + transaction.processed_by_last_name}</td>
+                    <td>${borrowStatusBadges[transaction.status]}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            table.appendChild(tbody);
+            borrowstablediv.appendChild(table);
+
+            currentBorrowsPage = response.data.page; 
+            renderPagination(borrowstablediv, response.data.page, response.data.totalPages, getAllBorrows);
+        }
+        else{
+            alert("ERROR");
+        }
     }
-    else{
+    catch(error){
+        console.error(error);
         alert("ERROR");
     }
 }
 
-const getAllReturns = async() => {
+//========================= RETURNS =========================
+let currentReturnsPage = 1;
+const returnsPerPage = 10;
+
+const getAllReturns = async(page = 1) => {
+    currentReturnsPage = page;
     const returnstablediv = document.getElementById('returnstablediv');
 
     const response = await axios.get(`${url}/returntransactions.php`,{
-        params:{operation:"getAllReturnTransactions"}
+        params:{operation:"getAllReturnTransactions", json: JSON.stringify({ page: page, limit: returnsPerPage })}
     })
 
     returnstablediv.innerHTML = '';
@@ -451,7 +566,14 @@ const getAllReturns = async() => {
 
     if(response.status == 200){
         console.log(response.data);
-        response.data.forEach(transaction => { 
+        response.data.data.forEach(transaction => { 
+            let notes;
+            if(!transaction.condition_notes){
+                notes = "N/A";
+            }
+            else{
+                notes = transaction.condition_notes;
+            }
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${transaction.accession_number}</td>
@@ -460,24 +582,31 @@ const getAllReturns = async() => {
                 <td>${transaction.expires_at}</td>
                 <td>${transaction.returned_at}</td>
                 <td>${transaction.condition_desc}</td>
-                <td>${transaction.condition_notes}</td>
+                <td>${notes}</td>
                 <td>${transaction.received_by_first_name + " " + transaction.received_by_last_name}</td>
             `;
             tbody.appendChild(row);
         })
         table.appendChild(tbody);
         returnstablediv.appendChild(table);
+
+        renderPagination(returnstablediv, response.data.page, response.data.totalPages, getAllReturns);
     }
     else{
         alert("ERROR");
     }
 }
 
-const getAllRenewals = async() => {
+//========================= RENEWALS =========================
+let currentRenewalsPage = 1;
+const renewalsPerPage = 10;
+
+const getAllRenewals = async(page = 1) => {
+    currentRenewalsPage = page;
     const renewalstablediv = document.getElementById('renewalstablediv');
 
     const response = await axios.get(`${url}/renewals.php`,{
-        params:{operation:"getAllRenewals"}
+        params:{operation:"getAllRenewals", json: JSON.stringify({ page: page, limit: renewalsPerPage })}
     })
 
     renewalstablediv.innerHTML = '';
@@ -501,7 +630,7 @@ const getAllRenewals = async() => {
 
     if(response.status == 200){
         console.log(response.data);
-        response.data.forEach(transaction => { 
+        response.data.data.forEach(transaction => { 
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${transaction.accession_number}</td>
@@ -516,17 +645,24 @@ const getAllRenewals = async() => {
         })
         table.appendChild(tbody);
         renewalstablediv.appendChild(table);
+
+        renderPagination(renewalstablediv, response.data.page, response.data.totalPages, getAllRenewals);
     }
     else{
         alert("ERROR");
     }
 }
 
-const getAllFines = async() => {
+//========================= FINES =========================
+let currentFinesPage = 1;
+const finesPerPage = 10;
+
+const getAllFines = async(page = 1) => {
+    currentFinesPage = page;
     const finestablediv = document.getElementById('finestablediv');
 
     const response = await axios.get(`${url}/fines.php`,{
-        params:{operation:"getAllFines"}
+        params:{operation:"getAllFines", json: JSON.stringify({ page: page, limit: finesPerPage })}
     })
 
     finestablediv.innerHTML = '';
@@ -551,7 +687,7 @@ const getAllFines = async() => {
 
     if(response.status == 200){
         console.log(response.data);
-        response.data.forEach(fine => { 
+        response.data.data.forEach(fine => { 
             let paidAt;
             if(!fine.paid_at){
                 paidAt = "-";
@@ -588,7 +724,7 @@ const getAllFines = async() => {
                     }
 
                     if(await payFineDetails(fine.fine_id) == 1){
-                        getAllFines();
+                        getAllFines(currentFinesPage);
                         Swal.fire({
                             title: 'Success',
                             text: "Fine paid successfully",
@@ -598,7 +734,7 @@ const getAllFines = async() => {
                     else{
                         Swal.fire({
                             title: 'Failed',
-                            text: "Failed to update fine",
+                            text: "Fine payment failed",
                             icon: 'error'
                         })
                     }
@@ -607,6 +743,8 @@ const getAllFines = async() => {
         })
         table.appendChild(tbody);
         finestablediv.appendChild(table);
+
+        renderPagination(finestablediv, response.data.page, response.data.totalPages, getAllFines);
     }
     else{
         alert("ERROR");
@@ -632,33 +770,66 @@ const payFineDetails = async(fine_id) => {
     return response.data;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async() => {
+    //lookups para sa dropdown sa modals
+    await Promise.all([
+        getAllAuthors(),
+        getAllPublishers(),
+        getAllGenres(),
+        getAllCategories(),
+        getAllConditions()
+    ]);
+
     getAllBooks();
     getAllCopies();
-    getAllAuthors();
-    getAllPublishers();
-    getAllGenres();
-    getAllCategories();
-    getAllConditions();
-    getAllDisposalReasons();
     getAllBorrows();
     getAllReturns();
     getAllRenewals();
     getAllFines();
-    
+
     document.getElementById('startborrow').addEventListener('click', () => {
-        startBorrow(copies, getAllBorrows);
+        startBorrow(() => {
+            getAllBorrows();
+            getAllCopies(currentCopiesPage);
+        });
     })
     document.getElementById('startreturn').addEventListener('click', () => {
-        startReturn(activeborrows, conditions, getAllBorrows, getAllReturns, getAllFines);
+        startReturn(activeborrows, conditions, () => {
+            getAllBorrows();
+            getAllCopies(currentCopiesPage);
+        }, getAllReturns, getAllFines);
     })
     document.getElementById('startrenew').addEventListener('click', () => {
         startRenew(activeborrows, getAllBorrows, getAllRenewals);
     })
     document.getElementById('addbook').addEventListener('click', () => {
-        addBook(authors, categories, genres, publishers, getAllBooks);
+        addBook(authors, categories, genres, publishers, () => getAllBooks(currentBooksPage));
     })
     document.getElementById('addcopy').addEventListener('click', () => {
-        addCopy(getAllCopies);
+        addCopy(() => getAllCopies(currentCopiesPage));
+    })
+    document.getElementById('addauthor').addEventListener('click', () => {
+        addAuthor(() => getAllAuthors(currentAuthorsPage));
+    }) 
+    document.getElementById('addpublisher').addEventListener('click', () => {
+        addPublisher(() => getAllPublishers(currentPublishersPage));
+    })
+    document.getElementById('borrowfilter').addEventListener('change', (e) => {
+        borrowfilter = e.target.value;
+        getAllBorrows(1);
+    })
+    document.getElementById('booksearch').addEventListener('input', (e) => {
+        clearTimeout(booksearchtimer);
+        booksearchtimer = setTimeout(() => {
+            booksearch = e.target.value.trim();
+            getAllBooks(1);
+        }, 300);
+    })
+    document.getElementById('copysearch').addEventListener('input', (e) => {
+        clearTimeout(copysearchtimer);
+        copysearchtimer = setTimeout(() => {
+            copysearch = e.target.value.trim();
+            getAllCopies(1);
+        }, 300);
     })
 })
