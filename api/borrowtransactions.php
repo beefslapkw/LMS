@@ -1,6 +1,10 @@
 <?php 
     header('Content-Type: application/json');
-    header("Access-Control-Allow-Origin: *");
+
+    require_once "auth.php";
+    enforceAccess();
+
+    require_once "reservationhelpers.php";
 
     class BorrowTransaction{
         function getAllBorrowTransactions($json){
@@ -86,10 +90,19 @@
             $json = json_decode($json, true);
         
             $header = $json['header'];
+            $header['processed_by'] = currentUserId();   //gikan sa session
             $details = $json['details'];
         
             try{
                 $conn->beginTransaction();
+
+                //NEW: i-expire una ang lapas na nga reservations para up to date ang status sa mga copies
+                expireReservations($conn);
+
+                //NEW: IDs para sa reservation pickup
+                $reservedId  = getCopyStatusId($conn, 'Reserved');
+                $activeResId = getReservationStatusId($conn, 'Active');
+                $fulfilledId = getReservationStatusId($conn, 'Fulfilled');
 
                 $sqlFineCheck = "SELECT COUNT(*) AS unpaidCount
                         FROM fine_records fr
@@ -133,12 +146,32 @@
                 $newId = $conn->lastInsertId();
         
                 //kwaon ang borrow_duration sa category sa book (in days)
+                //NEW: FOR UPDATE para di maagawan ang copy sa lain nga transaction
                 $sqlCopy = "SELECT c.borrow_duration, bc.status_id
                         FROM book_copies bc
                         INNER JOIN books b ON bc.book_id=b.book_id
                         INNER JOIN categories c ON b.category_id=c.category_id
-                        WHERE bc.copy_id=:copy_id";
+                        WHERE bc.copy_id=:copy_id
+                        FOR UPDATE";
                 $stmtCopy = $conn->prepare($sqlCopy);
+
+                //NEW: Active nga reservation sa copy nga iya sa borrower
+                $sqlResCheck = "SELECT ri.reservation_item_id
+                        FROM reservation_items ri
+                        INNER JOIN reservation_transactions rt ON ri.reservation_id=rt.reservation_id
+                        WHERE ri.copy_id=:copy_id
+                        AND rt.borrower_id=:borrower_id
+                        AND ri.reservation_status_id=:active_id
+                        AND rt.expires_at >= NOW()
+                        LIMIT 1
+                        FOR UPDATE";
+                $stmtResCheck = $conn->prepare($sqlResCheck);
+
+                //NEW: i-link ang reservation item sa borrow item ug markahan nga Fulfilled
+                $sqlResFulfill = "UPDATE reservation_items
+                        SET borrow_item_id=:borrow_item_id, reservation_status_id=:fulfilled_id
+                        WHERE reservation_item_id=:reservation_item_id";
+                $stmtResFulfill = $conn->prepare($sqlResFulfill);
         
                 $sqlStatus = "UPDATE book_copies SET status_id=2 WHERE copy_id=:copy_id"; 
                 $stmtStatus = $conn->prepare($sqlStatus);
@@ -157,8 +190,27 @@
                     $stmtCopy->bindParam(":copy_id", $row['copy_id']);
                     $stmtCopy->execute();
                     $copyInfo = $stmtCopy->fetch(PDO::FETCH_ASSOC);
-        
-                    if(!$copyInfo || $copyInfo['status_id'] != 1){ 
+
+                    if(!$copyInfo){
+                        $conn->rollBack();
+                        return json_encode("One or more copies are no longer available");
+                    }
+
+                    //NEW: ang Reserved nga copy pwede ra ma-borrow sa naka-reserve
+                    $reservationItemId = null;
+                    if($reservedId && $copyInfo['status_id'] == $reservedId){
+                        $stmtResCheck->bindValue(":copy_id", $row['copy_id']);
+                        $stmtResCheck->bindValue(":borrower_id", $header['borrower_id']);
+                        $stmtResCheck->bindValue(":active_id", $activeResId, PDO::PARAM_INT);
+                        $stmtResCheck->execute();
+                        $reservationItemId = $stmtResCheck->fetchColumn();
+
+                        if(!$reservationItemId){
+                            $conn->rollBack();
+                            return json_encode("One or more copies are reserved for another borrower");
+                        }
+                    }
+                    elseif($copyInfo['status_id'] != 1){ 
                         $conn->rollBack();
                         return json_encode("One or more copies are no longer available");
                     }
@@ -182,6 +234,15 @@
                         $stmtDtl->bindValue(":duration", $duration, PDO::PARAM_INT);
                         $stmtDtl->execute();
                     }
+                    //NEW: kwaon ang ID sa bag-ong borrow item (kinahanglan para sa link sa reservation)
+                    $newBorrowItemId = $conn->lastInsertId();
+
+                    if($reservationItemId){
+                        $stmtResFulfill->bindValue(":borrow_item_id", $newBorrowItemId);
+                        $stmtResFulfill->bindValue(":fulfilled_id", $fulfilledId, PDO::PARAM_INT);
+                        $stmtResFulfill->bindValue(":reservation_item_id", $reservationItemId);
+                        $stmtResFulfill->execute();
+                    }
         
                     $stmtStatus->bindValue(":copy_id", $row['copy_id']);
                     $stmtStatus->execute();
@@ -191,7 +252,9 @@
                 $returnValue = 1;
             }
             catch(Exception $e){
-                $conn->rollBack();
+                if($conn->inTransaction()){
+                    $conn->rollBack();
+                }
                 $returnValue = 0;
             }
             return json_encode($returnValue);

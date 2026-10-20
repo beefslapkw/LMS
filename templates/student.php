@@ -1,0 +1,136 @@
+<?php require_once "../api/auth.php"; requirePage([3]); ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Interface</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="../script/auth-guard.js" data-roles="3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+    <script type="module" src="../script/student.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <div id="header-div" class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+            <div>
+                <h2 id="welcome" class="fw-bold mb-0"></h2>
+                <small class="text-muted">Library Management Dashboard</small>
+            </div>
+            <button type="button" class="btn btn-outline-danger btn-sm px-3" onclick="appLogout()">Logout</button>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-md-4">
+                <div class="card text-white shadow-sm p-3" style="background-color: #006400;">
+                    <small class="text-uppercase fw-semibold">Currently Borrowed</small>
+                    <h2 class="display-6 fw-bold my-2 text-center" id="borrowedcount">-</h2>
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
+                <div class="card text-white shadow-sm p-3" style="background-color: #cc0000;">
+                    <small class="text-uppercase fw-semibold">Outstanding Fines</small>
+                    <h2 class="display-6 fw-bold my-2 text-center" id="finebalance">-</h2>
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
+                <div class="card text-white shadow-sm p-3" style="background-color: #006666;">
+                    <small class="text-uppercase fw-semibold">Book Copies Available</small>
+                    <h2 class="display-6 fw-bold my-2 text-center" id="availablecount">-</h2>
+                </div>
+            </div>
+        </div>
+
+        <ul class="nav nav-tabs mb-3">
+            <li class="nav-item">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#catalog-tab" type="button">Book Catalog</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#borrowed-tab" type="button">My Borrowed Books</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#reservations-tab" type="button">My Reservations</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#fines-tab" type="button">My Fines</button>
+            </li>
+        </ul>
+        </ul>
+
+        <div class="tab-content">
+
+            <div class="tab-pane fade show active" id="catalog-tab">
+                <div class="mb-3">
+                    <input type="text" id="searchbar" class="form-control" placeholder="Search by title, author, or genre...">
+                </div>
+                <div id="catalogtablediv"></div> <br>
+            </div>
+
+            <div class="tab-pane fade" id="borrowed-tab">
+                <h2>My Borrowed Books</h2>
+                <select id="borrowedfilter" class="form-select form-select-sm mb-2 w-auto">
+                    <option value="all">All</option>
+                    <option value="active">Active</option>
+                    <option value="overdue">Overdue</option>
+                    <option value="returned">Returned</option>
+                </select>
+                <div id="borrowedtablediv"></div> <br>
+            </div>
+
+            <div class="tab-pane fade" id="reservations-tab">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">To reserve a book, use the Reserve button in the Book Catalog tab.</small>
+                    <select id="reservationsfilter" class="form-select form-select-sm w-auto">
+                        <option value="active" selected>Active</option>
+                        <option value="fulfilled">Picked up</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="expired">Expired</option>
+                        <option value="all">All</option>
+                    </select>
+                </div>
+                <div id="reservationstablediv"></div> <br>
+            </div>
+            
+            <div class="tab-pane fade" id="fines-tab">
+                <ul class="nav nav-pills mb-3" id="finesnav">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#unpaid-fines-record" type="button">Outstanding</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#payment-history-record" type="button">Payment History</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="unpaid-fines-record">
+                        <div id="finestablediv"></div> <br>
+                    </div>
+                    <div class="tab-pane fade" id="payment-history-record">
+                        <div id="paymenthistorytablediv"></div> <br>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="blank-modal" role="modal">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content">
+                <div class="modal-header text-white" style="background-color:#006400">
+                    <h5 class="modal-title" id="blank-modal-title">Modal Title</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="blank-modal-body">
+                    <div class="row" id="blank-main-div" style="padding:5px;"></div>
+                </div>
+                <div class="modal-footer" id="blank-modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm w-100" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../script/notif.js"></script>
+</body>
+</html>

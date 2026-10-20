@@ -1,6 +1,8 @@
 <?php 
     header('Content-Type: application/json');
-    header("Access-Control-Allow-Origin: *");
+
+    require_once "auth.php";
+    enforceAccess();
 
     class Condition{
         function getAllConditions($json){

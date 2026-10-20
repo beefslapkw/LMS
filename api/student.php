@@ -1,6 +1,8 @@
 <?php 
     header('Content-Type: application/json');
-    header("Access-Control-Allow-Origin: *");
+
+    require_once "auth.php";
+    enforceAccess();
 
     class Student{
         function getBorrowedBooks($json){
@@ -8,7 +10,7 @@
 
             $json = json_decode($json, true);
 
-            $user_id = (int)$json['user_id'];
+            $user_id = resolveUserId($json);
             $status = isset($json['status']) ? $json['status'] : 'all';
 
             $page  = isset($json['page']) ? max(1, (int)$json['page']) : 1;
@@ -75,7 +77,7 @@
 
             $json = json_decode($json, true);
 
-            $user_id = (int)$json['user_id'];
+            $user_id = resolveUserId($json);
             $status = isset($json['status']) ? $json['status'] : 'unpaid';
             $is_paid = $status == 'paid' ? 1 : 0;
             $orderBy = $is_paid == 1 ? "f.paid_at DESC" : "f.fine_id DESC";
@@ -133,7 +135,7 @@
                     INNER JOIN borrow_transactions bt ON bi.transaction_id = bt.transaction_id
                     WHERE bt.borrower_id = :user_id AND f.is_paid = 0";
             $stmt = $conn->prepare($sql);
-            $stmt->bindValue(":user_id", (int)$json['user_id'], PDO::PARAM_INT);
+            $stmt->bindValue(":user_id", resolveUserId($json), PDO::PARAM_INT);
             $stmt->execute();
 
             return json_encode($stmt->fetch(PDO::FETCH_ASSOC));
@@ -148,7 +150,7 @@
                     INNER JOIN borrow_transactions bt ON bi.transaction_id = bt.transaction_id
                     WHERE bt.borrower_id = :user_id AND bi.is_returned = 0";
             $stmt = $conn->prepare($sql);
-            $stmt->bindValue(":user_id", (int)$json['user_id'], PDO::PARAM_INT);
+            $stmt->bindValue(":user_id", resolveUserId($json), PDO::PARAM_INT);
             $stmt->execute();
 
             return json_encode((int)$stmt->fetchColumn());

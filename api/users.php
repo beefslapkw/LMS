@@ -1,6 +1,8 @@
 <?php 
     header('Content-Type: application/json');
-    header("Access-Control-Allow-Origin: *");
+
+    require_once "auth.php";
+    enforceAccess();
 
     function checkRoleId($idnum){
         if(str_starts_with($idnum, 'H')){
@@ -66,7 +68,21 @@
             }
 
             $password = password_hash($json['password'], PASSWORD_DEFAULT);
-            $roleId = checkRoleId($json['id_number']);
+
+            //default: role base sa ID prefix
+            $roleId = checkRoleId((string)($json['id_number'] ?? ''));
+
+            //Head ra ang pwede maghimo ug staff accounts. Ang public registration kay student/faculty ra,
+            //kay kung dili, bisan kinsa makahimo ug Head account pinaagi sa ID nga nagsugod sa 'H'.
+            $isHead = sessionUserValid() && currentRoleId() === 1;
+            if($isHead){
+                if(isset($json['role_id']) && in_array((int)$json['role_id'], [1, 2, 3, 4], true)){
+                    $roleId = (int)$json['role_id'];   //ex: 2 = Student Assistant
+                }
+            }
+            elseif($roleId === 1){
+                return "Invalid ID number";
+            }
 
             $sql2 = "INSERT INTO users(role_id, id_number, last_name, first_name, contact_number, email_address,
                         username, password, department_id) 
@@ -141,6 +157,10 @@
 
             $json = json_decode($json, true);
 
+            if(!in_array((int)$json['role_id'], [1, 2, 3, 4], true)){
+                return json_encode("Invalid role");
+            }
+
             if(isset($json['password']) && $json['password'] !== ''){
                 $password = password_hash($json['password'], PASSWORD_DEFAULT);
                 $sql = "UPDATE users SET role_id=:role_id, id_number=:id_number, last_name=:last_name,
@@ -180,6 +200,11 @@
             include "connection.php";
 
             $json = json_decode($json, true);
+
+            //para dili ma-lockout ang Head sa iyang kaugalingon nga account
+            if((int)$json['user_id'] === currentUserId()){
+                return "You cannot deactivate your own account";
+            }
 
             $checkSql = "SELECT is_active FROM users WHERE user_id = :user_id";
             $checkStmt = $conn->prepare($checkSql);
@@ -242,30 +267,57 @@
             include "connection.php";
 
             $json = json_decode($json, true);
+            $username = $json['username'] ?? '';
+            $password = $json['password'] ?? '';
 
             $sql = "SELECT * FROM users WHERE username=:username";
             $stmt = $conn->prepare($sql);
-            $stmt->bindParam(":username", $json['username']);
+            $stmt->bindParam(":username", $username);
             $stmt->execute();
             $userdata = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if($userdata && $json['username'] == $userdata['username'] && password_verify($json['password'] ,$userdata['password'])){
+            if($userdata && password_verify($password, $userdata['password'])){
+                //i-check ang is_active after ma-verify ang password (dili ma-reveal nga naa ang account)
+                if((int)$userdata['is_active'] !== 1){
+                    return json_encode("Account is deactivated. Please contact the librarian.");
+                }
+
+                session_regenerate_id(true);   //prevent session fixation
+                $_SESSION['user_id']       = (int)$userdata['user_id'];
+                $_SESSION['role_id']       = (int)$userdata['role_id'];
+                $_SESSION['fullname']      = $userdata['first_name'] . " " . $userdata['last_name'];
+                $_SESSION['last_activity'] = time();
+
+                unset($userdata['password']);   //never send the hash to the client
                 return json_encode($userdata);
             }
-            else{
-                return "Incorrect username or password";
-            }
+
+            return json_encode("Incorrect username or password");
+        }
+        function logout(){
+            destroySession();
+            return json_encode(1);
+        }
+        function me(){
+            return json_encode([
+                "user_id"  => currentUserId(),
+                "role_id"  => currentRoleId(),
+                "fullname" => $_SESSION['fullname'] ?? ""
+            ]);
         }
     }
 
+    $operation = null;
+    $json = "";
     if($_SERVER['REQUEST_METHOD'] == 'GET'){
-        $operation = $_GET['operation'];
+        $operation = $_GET['operation'] ?? null;
         $json = isset($_GET['json']) ? $_GET['json'] : "";
     }
     elseif($_SERVER['REQUEST_METHOD'] == 'POST'){
-        $operation = $_POST['operation'];
+        $operation = $_POST['operation'] ?? null;
         $json = isset($_POST['json']) ? $_POST['json'] : "";
     }
+
 
     $user = new User();
     switch($operation){
@@ -292,6 +344,12 @@
             break;
         case "login":
             echo $user->login($json);
+            break;
+        case "logout":
+            echo $user->logout();
+            break;
+        case "me":
+            echo $user->me();
             break;
     }
 ?>

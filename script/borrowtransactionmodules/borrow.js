@@ -115,7 +115,22 @@ export const startBorrow = async(refreshDisplay) => {
         //kwaon ang copy gikan sa server kay pagination na, di na kompleto ang list sa frontend
         const copy = await findCopyByAccession(accession);
 
-        if(!copy || copy.status_desc != "Available"){
+        if(!copy){
+            resultDiv.innerHTML = `<span class="text-danger">Copy not found or unavailable</span>`;
+            return;
+        }
+
+        //NEW: ang Reserved nga copy pwede ra ma-borrow sa naka-reserve
+        copy.is_reserved_pickup = false;
+        if(copy.status_desc == "Reserved"){
+            const reservation = await findReservationForCopy(copy.copy_id, foundUser.user_id);
+            if(!reservation){
+                resultDiv.innerHTML = `<span class="text-danger">This copy is reserved for another borrower</span>`;
+                return;
+            }
+            copy.is_reserved_pickup = true;
+        }
+        else if(copy.status_desc != "Available"){
             resultDiv.innerHTML = `<span class="text-danger">Copy not found or unavailable</span>`;
             return;
         }
@@ -185,8 +200,10 @@ const renderSelectedCopies = () => {
     selectedcopies.forEach(copy => {
         const item = document.createElement('div');
         item.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'border', 'rounded', 'px-2', 'py-1', 'mb-1');
+        
+        const reservedBadge = copy.is_reserved_pickup ? ` <span class="badge bg-info text-dark">Reserved</span>` : '';
         item.innerHTML = `
-            <span>${copy.book_title} (${copy.accession_number})</span>
+            <span>${copy.book_title} (${copy.accession_number})${reservedBadge}</span>
             <button type="button" class="btn btn-sm btn-outline-danger remove">&times;</button>
         `;
         item.querySelector('.remove').addEventListener('click', () => {
@@ -218,6 +235,20 @@ const findCopyByAccession = async(accession) => {
     }
 
     const response = await axios.get(`${sessionStorage.url}/bookcopies.php`,{
+        params: params
+    })
+
+    console.log(response.data);
+    return response.data;
+}
+
+const findReservationForCopy = async(copyId, borrowerId) => {
+    const params = {
+        operation: "getReservationForCopy",
+        json: JSON.stringify({copy_id: copyId, borrower_id: borrowerId})
+    }
+
+    const response = await axios.get(`${sessionStorage.url}/reservationtransactions.php`,{
         params: params
     })
 

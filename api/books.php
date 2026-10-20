@@ -1,6 +1,8 @@
 <?php 
     header('Content-Type: application/json');
-    header("Access-Control-Allow-Origin: *");
+
+    require_once "auth.php";
+    enforceAccess();
 
     class Book{
         function getAllBooks($json){
@@ -51,6 +53,7 @@
             $json = json_decode($json, true);
 
             $book = $json['book'];
+            $book['added_by'] = currentUserId();
             $authors = $json['authors'];
 
             try{

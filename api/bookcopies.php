@@ -1,10 +1,28 @@
 <?php 
     header('Content-Type: application/json');
-    header("Access-Control-Allow-Origin: *");
+
+    require_once "auth.php";
+    enforceAccess();
+
+    require_once "reservationhelpers.php";
+
+    //students/faculty dili makakita sa staff names ug condition notes
+    function hideStaffFields(array $rows){
+        if(in_array(currentRoleId(), BORROWERS, true)){
+            foreach($rows as &$r){
+                unset($r['condition_notes'], $r['first_name'], $r['last_name'], $r['added_at']);
+            }
+            unset($r);
+        }
+        return $rows;
+    }
 
     class BookCopy{
         function getAllCopies($json){
             include "connection.php";
+
+            //i-expire una ang lapas na nga reservations para tarong ang status sa mga copies
+            safeExpireReservations($conn);
 
             $json = json_decode($json, true);
 
@@ -49,7 +67,8 @@
 
             $json = json_decode($json, true);
 
-            $qty = $json['qty'];
+            $json['added_by'] = currentUserId();   //gikan sa session, dili sa client
+            $qty = max(1, min(50, (int)$json['qty']));
 
             $sqlASC = "SELECT COALESCE(MAX(accession_number), 0) AS last_accession FROM book_copies";
             $stmtASC = $conn->prepare($sqlASC);
@@ -123,9 +142,21 @@
             include "connection.php";
 
             $json = json_decode($json, true);
+            $json['disposed_by'] = currentUserId();   //gikan sa session
+
 
             try{
                 $conn->beginTransaction();
+
+                //kung naay Active nga reservation aning copy, icancel kay dili na pwede ma-pickup
+                $sqlCancelRes = "UPDATE reservation_items
+                    SET reservation_status_id=:cancelled_id
+                    WHERE copy_id=:copy_id AND reservation_status_id=:active_id";
+                $stmtCancelRes = $conn->prepare($sqlCancelRes);
+                $stmtCancelRes->bindValue(":cancelled_id", getReservationStatusId($conn, 'Cancelled'), PDO::PARAM_INT);
+                $stmtCancelRes->bindValue(":active_id", getReservationStatusId($conn, 'Active'), PDO::PARAM_INT);
+                $stmtCancelRes->bindValue(":copy_id", $json['copy_id']);
+                $stmtCancelRes->execute();
 
                 $sql = "UPDATE book_copies SET status_id=:status_id
                     WHERE copy_id=:copy_id";
@@ -147,7 +178,9 @@
                 $returnValue = 1;
             }
             catch(Exception $e){
-                $conn->rollBack();
+                if($conn->inTransaction()){
+                    $conn->rollBack();
+                }
                 $returnValue = 0;
             }
 
@@ -155,6 +188,9 @@
         }
         function getCopyByAccession($json){
             include "connection.php";
+
+            //iexpire una ang lapas na nga reservations para tarong ang status sa mga copies
+            safeExpireReservations($conn);
 
             $json = json_decode($json, true);
 
@@ -171,6 +207,9 @@
         }
         function searchCopies($json){
             include "connection.php";
+
+            //iexpire una ang lapas na nga reservations para tarong ang status sa mga copies
+            safeExpireReservations($conn);
 
             $json = json_decode($json, true);
             $search = isset($json['search']) ? trim($json['search']) : "";
@@ -214,7 +253,7 @@
             $stmt->execute();
 
             return json_encode([
-                "data" => $stmt->fetchAll(PDO::FETCH_ASSOC),
+                "data" => hideStaffFields($stmt->fetchAll(PDO::FETCH_ASSOC)),
                 "total" => $totalRows,
                 "page" => $page,
                 "limit" => $limit,
@@ -224,6 +263,9 @@
         function getAvailableCount(){
             include "connection.php";
 
+            //iexpire una ang lapas na nga reservations para tarong ang status sa mga copies
+            safeExpireReservations($conn);
+
             $sql = "SELECT COUNT(*) FROM book_copies c
                 JOIN statuses s ON s.status_id = c.status_id
                 WHERE s.status_desc = 'Available'";
@@ -232,6 +274,35 @@
             $rs = (int)$stmt->fetchColumn();
 
             return json_encode($rs);
+        }
+        //available copies kada libro, para sa student catalog (Reserve button)
+        function getAvailableCountsByBook($json){
+            include "connection.php";
+
+            safeExpireReservations($conn);
+
+            $json = json_decode($json, true);
+            $ids = array_values(array_filter(array_map('intval', $json['book_ids'] ?? [])));
+
+            if(count($ids) == 0){
+                return json_encode((object)[]);
+            }
+
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $sql = "SELECT bc.book_id, COUNT(*) AS available_count
+                    FROM book_copies bc
+                    INNER JOIN statuses s ON bc.status_id = s.status_id
+                    WHERE s.status_desc = 'Available' AND bc.book_id IN ($placeholders)
+                    GROUP BY bc.book_id";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute($ids);
+
+            $counts = [];
+            foreach($stmt->fetchAll(PDO::FETCH_ASSOC) as $row){
+                $counts[$row['book_id']] = (int)$row['available_count'];
+            }
+
+            return json_encode((object)$counts);
         }
     }
 
@@ -269,6 +340,9 @@
             break;
         case "getAvailableCount":
             echo $bookcopy->getAvailableCount();
+            break;
+        case "getAvailableCountsByBook":
+            echo $bookcopy->getAvailableCountsByBook($json);
             break;
     }
 ?>

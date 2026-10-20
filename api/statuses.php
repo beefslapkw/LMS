@@ -1,6 +1,8 @@
 <?php 
     header('Content-Type: application/json');
-    header("Access-Control-Allow-Origin: *");
+
+    require_once "auth.php";
+    enforceAccess();
 
     class Status{
         function getAllStatuses($json){
@@ -88,7 +90,7 @@
 
             $json = json_decode($json, true);
 
-            $sql = "DELETE FROM statuss
+            $sql = "DELETE FROM statuses
             WHERE status_id=:status_id";
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(":status_id", $json['status_id']);
@@ -111,7 +113,7 @@
         $json = isset($_POST['json']) ? $_POST['json'] : "";
     }
 
-    $status = new status();
+    $status = new Status();
     switch($operation){
         case "getAllStatuses":
             echo $status->getAllStatuses($json);

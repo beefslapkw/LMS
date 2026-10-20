@@ -3,12 +3,14 @@ const departmentlist = document.getElementById('department');
 
 const getAllDepartments = async() => {
     const response = await axios.get(`${url}/departments.php`,{
-        params:{operation:"getAllDepartments"}
+        params:{operation:"getAllDepartments", json: JSON.stringify({ limit: 100 })}
     })
 
     if(response.status == 200){
         console.log(response.data);
-        response.data.forEach(department => {
+        //ang API naay pagination: {data: [...]}; suportahan gihapon ang karaan nga array format
+        const departments = Array.isArray(response.data) ? response.data : response.data.data;
+        departments.forEach(department => {
             const opt = document.createElement('option');
             opt.value = department.department_id;
             opt.innerText = department.department_name;

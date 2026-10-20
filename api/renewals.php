@@ -1,6 +1,8 @@
 <?php 
     header('Content-Type: application/json');
-    header("Access-Control-Allow-Origin: *");
+
+    require_once "auth.php";
+    enforceAccess();
 
     class RenewalRecord{
         function getAllRenewals($json){
@@ -53,7 +55,7 @@
             $json = json_decode($json, true);
 
             $borrowItemId = $json['borrow_item_id'];
-            $renewedBy = $json['renewed_by'];
+            $renewedBy = currentUserId();   //gikan sa session
 
             try{
                 $conn->beginTransaction();

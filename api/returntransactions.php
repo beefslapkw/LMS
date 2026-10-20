@@ -1,6 +1,8 @@
 <?php 
     header('Content-Type: application/json');
-    header("Access-Control-Allow-Origin: *");
+
+    require_once "auth.php";
+    enforceAccess();
 
     class ReturnTransaction{
         function getAllReturnTransactions($json){
@@ -57,6 +59,7 @@
             $json = json_decode($json, true);
 
             $header = $json['header'];
+            $header['received_by'] = currentUserId();   //gikan sa session
             $details = $json['details'];
 
             try{
@@ -81,7 +84,11 @@
                 $sqlMarkReturned = "UPDATE borrow_items SET is_returned=1 WHERE borrow_item_id=:borrow_item_id";
                 $stmtMarkReturned = $conn->prepare($sqlMarkReturned);
 
-                $sqlStatus = "UPDATE book_copies SET status_id=1 WHERE copy_id=:copy_id"; 
+                $sqlStatus = "UPDATE book_copies 
+                            SET status_id = 1,
+                                condition_id = :condition_id,
+                                condition_notes = :condition_notes 
+                            WHERE copy_id = :copy_id"; 
                 $stmtStatus = $conn->prepare($sqlStatus);
 
                 $sqlFine = "INSERT INTO fine_records(borrow_item_id, days_late, fine_amount, is_paid)
@@ -108,6 +115,8 @@
                     $stmtMarkReturned->execute();
 
                     $stmtStatus->bindParam(":copy_id", $borrowInfo['copy_id']);
+                    $stmtStatus->bindParam(":condition_id", $row['condition_on_return']); 
+                    $stmtStatus->bindParam(":condition_notes", $row['condition_notes']);
                     $stmtStatus->execute();
 
                     //computation sa fine

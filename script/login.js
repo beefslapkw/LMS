@@ -4,31 +4,36 @@ const login = async() => {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
 
-    const params = {
-        operation: "login",
-        json: JSON.stringify({"username": username, "password": password})
+    const jsondata = {
+        username: username,
+        password: password
     }
 
-    const response = await axios.get(`${url}/users.php`, {
-        params:params
-    });
-    
-    console.log(response.data);
-    if(response.data.username == username){
+    const formData = new FormData();
+    formData.append("operation", "login");
+    formData.append("json", JSON.stringify(jsondata));
+
+    const response = await axios({
+        url: `${url}/users.php`,
+        method: "POST",
+        data: formData
+    })
+
+    if(response.data.user_id){
         sessionStorage.setItem("fullname", response.data.first_name + " " + response.data.last_name);
         sessionStorage.setItem("userId", response.data.user_id);
         switch(response.data.role_id){
             case 1:
-                window.location.href = "./templates/headLibrarian.html";
+                window.location.href = "./templates/headLibrarian.php";
                 break;
             case 2:
-                window.location.href = "./templates/studentAssistant.html";
+                window.location.href = "./templates/studentAssistant.php";
                 break;
             case 3:
-                window.location.href = "./templates/student.html";
+                window.location.href = "./templates/student.php";
                 break;
             case 4:
-                window.location.href = "./templates/faculty.html";
+                window.location.href = "./templates/faculty.php";
                 break;
             default:
                 alert("ERROR");

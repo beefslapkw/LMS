@@ -24,14 +24,37 @@ import { updatePublisher } from "./publishermodules/update.js";
 
 const url = `${location.origin}/LMS/api`;
 sessionStorage.setItem("url", url);
-let authors = [];
-let categories = [];
-let genres = [];
-let publishers = [];
-let conditions = [];
+
+const fetchAllRows = async(file, operation) => {
+    let rows = [];
+    let page = 1;
+    let totalPages = 1;
+
+    do{
+        const response = await axios.get(`${url}/${file}`,{
+            params:{operation: operation, json: JSON.stringify({ page: page, limit: 100 })}
+        })
+        rows = rows.concat(response.data.data);
+        totalPages = response.data.totalPages;
+        page++;
+    } while(page <= totalPages);
+
+    return rows;
+}
+
+const loadAuthors = () => fetchAllRows('authors.php', 'getAllAuthors');
+const loadPublishers = () => fetchAllRows('publishers.php', 'getAllPublishers');
+const loadGenres = () => fetchAllRows('genres.php', 'getAllGenres');
+const loadCategories = () => fetchAllRows('categories.php', 'getAllCategories');
+const loadConditions = () => fetchAllRows('conditions.php', 'getAllConditions');
+
+//author/category/genre/publisher lists para sa add/update book modals
+const loadBookLists = () => Promise.all([loadAuthors(), loadCategories(), loadGenres(), loadPublishers()]);
 let activeborrows = [];
 
-document.getElementById('welcome').innerHTML = `Welcome Student Assistant ${sessionStorage.fullname}`;
+authReady.then(me => {
+    document.getElementById('welcome').textContent = `Welcome, Student Assistant ${me.fullname}`;
+});
 
 //container - ang div, curPage - ang current page, totalPages - ang total rows/limit gikan sa api, goTo - ang function (ex: getAllBooks)
 const renderPagination = (container, curPage, totalPages, goTo) => {
@@ -70,58 +93,6 @@ const renderPagination = (container, curPage, totalPages, goTo) => {
 
     container.appendChild(pagination);
 };
-
-//========================= LOOKUPS (para sa dropdown sa modals, walay table) =========================
-const getAllGenres = async() => {
-    const response = await axios.get(`${url}/genres.php`,{
-        params:{operation:"getAllGenres", json: JSON.stringify({ page: 1, limit: 100 })}
-    })
-
-    if(response.status == 200){
-        console.log(response.data);
-        genres = [];
-        response.data.data.forEach(genre => {
-            genres.push(genre);
-        })
-    }
-    else{
-        alert("ERROR");
-    }
-}
-
-const getAllCategories = async() => {
-    const response = await axios.get(`${url}/categories.php`,{
-        params:{operation:"getAllCategories", json: JSON.stringify({ page: 1, limit: 100 })}
-    })
-
-    if(response.status == 200){
-        console.log(response.data);
-        categories = [];
-        response.data.data.forEach(category => {
-            categories.push(category);
-        })
-    }
-    else{
-        alert("ERROR");
-    }
-}
-
-const getAllConditions = async() => {
-    const response = await axios.get(`${url}/conditions.php`,{
-        params:{operation:"getAllConditions", json: JSON.stringify({ page: 1, limit: 100 })}
-    })
-
-    if(response.status == 200){
-        console.log(response.data);
-        conditions = [];
-        response.data.data.forEach(condition => {
-            conditions.push(condition);
-        })
-    }
-    else{
-        alert("ERROR");
-    }
-}
 
 //========================= BOOKS =========================
 let currentBooksPage = 1;
@@ -206,7 +177,7 @@ const getAllBooks = async(page = 1) => {
 
             //mabalik sa current page imbes page 1
             row.querySelector(".update").addEventListener('click', () => {
-                updateBook(book.book_id, authors, categories, genres, publishers, () => getAllBooks(currentBooksPage));
+                loadBookLists().then(([authors, categories, genres, publishers]) => updateBook(book.book_id, authors, categories, genres, publishers, () => getAllBooks(currentBooksPage)));
             })
             
             const deactivateBtn = row.querySelector(".deactivate");
@@ -308,7 +279,7 @@ const getAllCopies = async(page = 1) => {
 
             //mabalik sa current page imbes page 1
             row.querySelector(".update").addEventListener('click', () => {
-                updateCopy(copy.copy_id, conditions, () => getAllCopies(currentCopiesPage));
+                loadConditions().then(conditions => updateCopy(copy.copy_id, conditions, () => getAllCopies(currentCopiesPage)));
             })
         })
         table.appendChild(tbody);
@@ -320,6 +291,8 @@ const getAllCopies = async(page = 1) => {
         alert("ERROR");
     }
 }
+
+window.getAllCopies = getAllCopies;
 
 //========================= AUTHORS =========================
 let currentAuthorsPage = 1;
@@ -348,7 +321,6 @@ const getAllAuthors = async(page = 1) => {
     const tbody = document.createElement('tbody');
 
     if(response.status == 200){
-        authors = [];
         console.log(response.data);
         document.getElementById('authorscard').innerHTML = `
             <div class="card text-white shadow-sm p-3" style="background-color: #e68a00;">
@@ -357,7 +329,6 @@ const getAllAuthors = async(page = 1) => {
             </div>
         `;
         response.data.data.forEach(author => { 
-            authors.push(author);
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${author.author_name}</td>
@@ -412,7 +383,6 @@ const getAllPublishers = async(page = 1) => {
     const tbody = document.createElement('tbody');
 
     if(response.status == 200){
-        publishers = [];
         console.log(response.data);
         document.getElementById('publisherscard').innerHTML = `
             <div class="card text-white shadow-sm p-3" style="background-color: #00a8a8;">
@@ -421,7 +391,6 @@ const getAllPublishers = async(page = 1) => {
             </div>
         `;
         response.data.data.forEach(publisher => { 
-            publishers.push(publisher);
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${publisher.publisher_name}</td>
@@ -770,14 +739,121 @@ const payFineDetails = async(fine_id) => {
     return response.data;
 }
 
+//========================= RESERVATIONS =========================
+let reservationfilter = 'active';
+let currentReservationsPage = 1;
+const reservationsPerPage = 10;
+
+const getAllReservations = async(page = 1) => {
+    currentReservationsPage = page;
+    const reservationstablediv = document.getElementById('reservationstablediv');
+
+    const response = await axios.get(`${url}/reservationtransactions.php`,{
+        params:{operation:"getAllReservations", json: JSON.stringify({ page: page, limit: reservationsPerPage, status: reservationfilter })}
+    })
+
+    reservationstablediv.innerHTML = '';
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+        <tr>
+            <th>Accession No.</th>
+            <th>Book Title</th>
+            <th>Reserved By</th>
+            <th>Reserved At</th>
+            <th>Pick Up Until</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    `;
+    table.appendChild(thead);
+    table.classList.add("table", "table-hover", "table-striped", "table-sm");
+    const tbody = document.createElement('tbody');
+
+    if(response.status == 200){
+        console.log(response.data);
+        response.data.data.forEach(reservation => {
+            let cancelbutton = '';
+            if(reservation.reservation_status_desc == "Active"){
+                cancelbutton = `<button class="btn btn-danger btn-sm cancel">Cancel</button>`;
+            }
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${reservation.accession_number}</td>
+                <td>${reservation.book_title}</td>
+                <td>${reservation.borrower_first_name + " " + reservation.borrower_last_name}</td>
+                <td>${reservation.reserved_at}</td>
+                <td>${reservation.expires_at}</td>
+                <td>${reservation.reservation_status_desc}</td>
+                <td>${cancelbutton}</td>
+            `;
+            tbody.appendChild(row);
+
+            const cancelBtn = row.querySelector(".cancel");
+            if(cancelBtn){
+                cancelBtn.addEventListener('click', async() => {
+                    const confirmed = confirm(`Cancel the reservation of "${reservation.book_title}" for ${reservation.borrower_first_name} ${reservation.borrower_last_name}?`);
+                    if(!confirmed){
+                        return;
+                    }
+
+                    const result = await cancelReservationItem(reservation.reservation_item_id);
+                    if(result == 1){
+                        getAllReservations(currentReservationsPage);
+                        getAllCopies(currentCopiesPage);
+                        Swal.fire({
+                            title: 'Success',
+                            text: "Reservation cancelled",
+                            icon: 'success'
+                        })
+                    }
+                    else{
+                        Swal.fire({
+                            title: 'Failed',
+                            text: result || "Failed to cancel reservation",
+                            icon: 'error'
+                        })
+                    }
+                })
+            }
+        })
+        table.appendChild(tbody);
+        reservationstablediv.appendChild(table);
+
+        renderPagination(reservationstablediv, response.data.page, response.data.totalPages, getAllReservations);
+    }
+    else{
+        alert("ERROR");
+    }
+}
+
+window.getAllReservations = getAllReservations;
+
+const cancelReservationItem = async(reservation_item_id) => {
+    const jsondata = {
+        reservation_item_id: reservation_item_id
+    };
+
+    const formData = new FormData();
+    formData.append('operation', "cancelReservationItem");
+    formData.append('json', JSON.stringify(jsondata));
+
+    const response = await axios({
+        url: `${sessionStorage.url}/reservationtransactions.php`,
+        method: "POST",
+        data: formData
+    })
+
+    console.log(response.data);
+    return response.data;
+}
+
 document.addEventListener('DOMContentLoaded', async() => {
-    //lookups para sa dropdown sa modals
     await Promise.all([
         getAllAuthors(),
-        getAllPublishers(),
-        getAllGenres(),
-        getAllCategories(),
-        getAllConditions()
+        getAllPublishers()
     ]);
 
     getAllBooks();
@@ -785,6 +861,7 @@ document.addEventListener('DOMContentLoaded', async() => {
     getAllBorrows();
     getAllReturns();
     getAllRenewals();
+    getAllReservations();
     getAllFines();
 
     document.getElementById('startborrow').addEventListener('click', () => {
@@ -793,8 +870,8 @@ document.addEventListener('DOMContentLoaded', async() => {
             getAllCopies(currentCopiesPage);
         });
     })
-    document.getElementById('startreturn').addEventListener('click', () => {
-        startReturn(activeborrows, conditions, () => {
+    document.getElementById('startreturn').addEventListener('click', async() => {
+        startReturn(activeborrows, await loadConditions(), () => {
             getAllBorrows();
             getAllCopies(currentCopiesPage);
         }, getAllReturns, getAllFines);
@@ -803,7 +880,7 @@ document.addEventListener('DOMContentLoaded', async() => {
         startRenew(activeborrows, getAllBorrows, getAllRenewals);
     })
     document.getElementById('addbook').addEventListener('click', () => {
-        addBook(authors, categories, genres, publishers, () => getAllBooks(currentBooksPage));
+        loadBookLists().then(([authors, categories, genres, publishers]) => addBook(authors, categories, genres, publishers, () => getAllBooks(currentBooksPage)));
     })
     document.getElementById('addcopy').addEventListener('click', () => {
         addCopy(() => getAllCopies(currentCopiesPage));
@@ -831,5 +908,9 @@ document.addEventListener('DOMContentLoaded', async() => {
             copysearch = e.target.value.trim();
             getAllCopies(1);
         }, 300);
+    })
+    document.getElementById('reservationfilter').addEventListener('change', (e) => {
+        reservationfilter = e.target.value;
+        getAllReservations(1);
     })
 })

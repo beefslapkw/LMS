@@ -1,7 +1,10 @@
 const url = `${location.origin}/LMS/api`;
 sessionStorage.setItem("url", url);
 
-document.getElementById('welcome').innerHTML = `Welcome Faculty ${sessionStorage.fullname}`;
+//ang ngalan gikan sa verified session
+authReady.then(me => {
+    document.getElementById('welcome').textContent = `Welcome, Faculty ${me.fullname}`;
+});
 
 let allBooks = []; 
 
@@ -129,7 +132,7 @@ const getMyBorrowedBooks = async(page = 1) => {
     currentBorrowedPage = page;
     const borrowedtablediv = document.getElementById('borrowedtablediv');
 
-    const response = await axios.get(`${url}/faculty.php`,{
+    const response = await axios.get(`${url}/student.php`,{
         params:{operation:"getBorrowedBooks", json: JSON.stringify({ user_id: sessionStorage.userId, status: borrowedfilter, page: page, limit: borrowedPerPage })}
     })
 
@@ -187,7 +190,7 @@ const getMyBorrowedBooks = async(page = 1) => {
     }
     else{
         alert("ERROR");
-    }
+    } 
 }
 
 let currentFinesPage = 1;
@@ -197,7 +200,7 @@ const getMyFines = async(page = 1) => {
     currentFinesPage = page;
     const finestablediv = document.getElementById('finestablediv');
 
-    const response = await axios.get(`${url}/faculty.php`,{
+    const response = await axios.get(`${url}/student.php`,{
         params:{operation:"getFines", json: JSON.stringify({ user_id: sessionStorage.userId, status: 'unpaid', page: page, limit: finesPerPage })}
     })
 
@@ -251,7 +254,7 @@ const getPaymentHistory = async(page = 1) => {
     currentPaymentsPage = page;
     const paymenthistorytablediv = document.getElementById('paymenthistorytablediv');
 
-    const response = await axios.get(`${url}/faculty.php`,{
+    const response = await axios.get(`${url}/student.php`,{
         params:{operation:"getFines", json: JSON.stringify({ user_id: sessionStorage.userId, status: 'paid', page: page, limit: paymentsPerPage })}
     })
 
@@ -301,7 +304,7 @@ const getPaymentHistory = async(page = 1) => {
 }
 
 const getFineBalance = async() => {
-    const response = await axios.get(`${url}/faculty.php`,{
+    const response = await axios.get(`${url}/student.php`,{
         params:{operation:"getFineBalance", json: JSON.stringify({ user_id: sessionStorage.userId })}
     })
 
@@ -322,7 +325,7 @@ const getAvailableCount = async() => {
 }
 
 const getBorrowedCount = async() => {
-    const response = await axios.get(`${url}/faculty.php`,{
+    const response = await axios.get(`${url}/student.php`,{
         params:{operation:"getBorrowedCount", json: JSON.stringify({ user_id: sessionStorage.userId })}
     })
 
