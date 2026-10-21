@@ -21,50 +21,68 @@ import { disposeCopy } from "./bookcopymodules/dispose.js";
 import { addCategory } from "./categorymodules/add.js";
 import { viewCategory } from "./categorymodules/view.js";
 import { updateCategory } from "./categorymodules/update.js";
+import { deactivateCategory } from "./categorymodules/deactivate.js";
+import { reactivateCategory } from "./categorymodules/reactivate.js";
 
 import { addAuthor } from "./authorsmodules/add.js";
 import { viewAuthor } from "./authorsmodules/view.js";
 import { updateAuthor } from "./authorsmodules/update.js";
+import { deactivateAuthor } from "./authorsmodules/deactivate.js";
+import { reactivateAuthor } from "./authorsmodules/reactivate.js";
 
 import { addPublisher } from "./publishermodules/add.js";
 import { viewPublisher } from "./publishermodules/view.js";
 import { updatePublisher } from "./publishermodules/update.js";
+import { deactivatePublisher } from "./publishermodules/deactivate.js";
+import { reactivatePublisher } from "./publishermodules/reactivate.js";
 
 import { addGenre } from "./genremodules/add.js";
 import { viewGenre } from "./genremodules/view.js";
 import { updateGenre } from "./genremodules/update.js";
+import { deactivateGenre } from "./genremodules/deactivate.js";
+import { reactivateGenre } from "./genremodules/reactivate.js";
 
 import { addDepartment } from "./departmentmodules/add.js";
 import { viewDepartment } from "./departmentmodules/view.js";
 import { updateDepartment } from "./departmentmodules/update.js";
+import { deactivateDepartment } from "./departmentmodules/deactivate.js";
+import { reactivateDepartment } from "./departmentmodules/reactivate.js";
 
 import { addRole } from "./rolemodules/add.js";
 import { viewRole } from "./rolemodules/view.js";
 import { updateRole } from "./rolemodules/update.js";
+import { deactivateRole } from "./rolemodules/deactivate.js";
+import { reactivateRole } from "./rolemodules/reactivate.js";
 
 import { addStatus } from "./statusmodules/add.js";
 import { viewStatus } from "./statusmodules/view.js";
 import { updateStatus } from "./statusmodules/update.js";
+import { deactivateStatus } from "./statusmodules/deactivate.js";
+import { reactivateStatus } from "./statusmodules/reactivate.js";
 
 import { addCondition } from "./conditionmodules/add.js";
 import { viewCondition } from "./conditionmodules/view.js";
 import { updateCondition } from "./conditionmodules/update.js";
+import { deactivateCondition } from "./conditionmodules/deactivate.js";
+import { reactivateCondition } from "./conditionmodules/reactivate.js";
 
 import { addDisposalReason } from "./disposalreasonmodules/add.js";
 import { viewDisposalReason } from "./disposalreasonmodules/view.js";
 import { updateDisposalReason } from "./disposalreasonmodules/update.js";
+import { deactivateDisposalReason } from "./disposalreasonmodules/deactivate.js";
+import { reactivateDisposalReason } from "./disposalreasonmodules/reactivate.js";
 
 const url = `${location.origin}/LMS/api`;
 sessionStorage.setItem("url", url);
 
-const fetchAllRows = async(file, operation) => {
+const fetchAllRows = async(file, operation, extraParams = {}) => {
     let rows = [];
     let page = 1;
     let totalPages = 1;
 
     do{
         const response = await axios.get(`${url}/${file}`,{
-            params:{operation: operation, json: JSON.stringify({ page: page, limit: 100 })}
+            params:{operation: operation, json: JSON.stringify({ page: page, limit: 100, ...extraParams })}
         })
         rows = rows.concat(response.data.data);
         totalPages = response.data.totalPages;
@@ -77,14 +95,14 @@ const fetchAllRows = async(file, operation) => {
     return rows;
 }
 
-const loadDepartments = () => fetchAllRows('departments.php', 'getAllDepartments');
-const loadRoles = () => fetchAllRows('roles.php', 'getAllRoles');
-const loadAuthors = () => fetchAllRows('authors.php', 'getAllAuthors');
-const loadPublishers = () => fetchAllRows('publishers.php', 'getAllPublishers');
-const loadGenres = () => fetchAllRows('genres.php', 'getAllGenres');
-const loadCategories = () => fetchAllRows('categories.php', 'getAllCategories');
-const loadConditions = () => fetchAllRows('conditions.php', 'getAllConditions');
-const loadDisposalReasons = () => fetchAllRows('disposalreasons.php', 'getAllDisposalReasons');
+const loadDepartments = () => fetchAllRows('departments.php', 'getAllDepartments', { active_only: 1 });
+const loadRoles = () => fetchAllRows('roles.php', 'getAllRoles', { active_only: 1 });
+const loadAuthors = () => fetchAllRows('authors.php', 'getAllAuthors', { active_only: 1 });
+const loadPublishers = () => fetchAllRows('publishers.php', 'getAllPublishers', { active_only: 1 });
+const loadGenres = () => fetchAllRows('genres.php', 'getAllGenres', { active_only: 1 });
+const loadCategories = () => fetchAllRows('categories.php', 'getAllCategories', { active_only: 1 });
+const loadConditions = () => fetchAllRows('conditions.php', 'getAllConditions', { active_only: 1 });
+const loadDisposalReasons = () => fetchAllRows('disposalreasons.php', 'getAllDisposalReasons', { active_only: 1 });
 
 //author/category/genre/publisher lists para sa add/update book modals
 const loadBookLists = () => Promise.all([loadAuthors(), loadCategories(), loadGenres(), loadPublishers()]);
@@ -114,6 +132,7 @@ const getAllDepartments = async(page = 1) => {
     thead.innerHTML = `
         <tr>
             <th>Department Name</th>
+            <th>Status</th>
             <th>Action</th>
         </tr>
     `;
@@ -124,12 +143,24 @@ const getAllDepartments = async(page = 1) => {
     if(response.status == 200){
         console.log(response.data);
         response.data.data.forEach(department => {
+            let status;
+            let statusButtons;
+            if(department.is_active == 1){
+                status = "Active";
+                statusButtons = `<button class="btn btn-danger btn-sm deactivate">De-activate</button>`;
+            }
+            else if(department.is_active == 0){
+                status = "Inactive";
+                statusButtons = `<button class="btn btn-primary btn-sm reactivate">Re-activate</button>`;
+            }
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${department.department_name}</td>
+                <td>${status}</td>
                 <td>
                     <button class="btn btn-secondary btn-sm view">View</button>
                     <button class="btn btn-success btn-sm update">Update</button>
+                    ${statusButtons}
                 </td>
             `;
             tbody.appendChild(row);
@@ -140,6 +171,20 @@ const getAllDepartments = async(page = 1) => {
             row.querySelector(".update").addEventListener('click', () => {
                 updateDepartment(department.department_id, () => getAllDepartments(currentDepartmentsPage));
             })
+
+            const deactivateBtn = row.querySelector(".deactivate");
+            if(deactivateBtn){
+                deactivateBtn.addEventListener('click', () => {
+                    deactivateDepartment(department.department_id, () => getAllDepartments(currentDepartmentsPage));
+                })
+            }
+
+            const reactivateBtn = row.querySelector(".reactivate");
+            if(reactivateBtn){
+                reactivateBtn.addEventListener('click', () => {
+                    reactivateDepartment(department.department_id, () => getAllDepartments(currentDepartmentsPage));
+                })
+            }
         })
         table.appendChild(tbody);
         departmentstablediv.appendChild(table);
@@ -169,6 +214,7 @@ const getAllRoles = async(page = 1) => {
     thead.innerHTML = `
         <tr>
             <th>Role Name</th>
+            <th>Status</th>
             <th>Action</th>
         </tr>
     `;
@@ -179,12 +225,24 @@ const getAllRoles = async(page = 1) => {
     if(response.status == 200){
         console.log(response.data);
         response.data.data.forEach(role => {
+            let status;
+            let statusButtons;
+            if(role.is_active == 1){
+                status = "Active";
+                statusButtons = `<button class="btn btn-danger btn-sm deactivate">De-activate</button>`;
+            }
+            else if(role.is_active == 0){
+                status = "Inactive";
+                statusButtons = `<button class="btn btn-primary btn-sm reactivate">Re-activate</button>`;
+            }
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${role.role_type}</td>
+                <td>${status}</td>
                 <td>
                     <button class="btn btn-secondary btn-sm view">View</button>
                     <button class="btn btn-success btn-sm update">Update</button>
+                    ${statusButtons}
                 </td>
             `;
             tbody.appendChild(row);
@@ -195,6 +253,20 @@ const getAllRoles = async(page = 1) => {
             row.querySelector(".update").addEventListener('click', () => {
                 updateRole(role.role_id, () => getAllRoles(currentRolesPage));
             })
+
+            const deactivateBtn = row.querySelector(".deactivate");
+            if(deactivateBtn){
+                deactivateBtn.addEventListener('click', () => {
+                    deactivateRole(role.role_id, () => getAllRoles(currentRolesPage));
+                })
+            }
+
+            const reactivateBtn = row.querySelector(".reactivate");
+            if(reactivateBtn){
+                reactivateBtn.addEventListener('click', () => {
+                    reactivateRole(role.role_id, () => getAllRoles(currentRolesPage));
+                })
+            }
         })
         table.appendChild(tbody);
         rolestablediv.appendChild(table);
@@ -224,6 +296,7 @@ const getAllStatuses = async(page = 1) => {
     thead.innerHTML = `
         <tr>
             <th>Status</th>
+            <th>Status State</th>
             <th>Action</th>
         </tr>
     `;
@@ -233,23 +306,49 @@ const getAllStatuses = async(page = 1) => {
 
     if(response.status == 200){
         console.log(response.data);
-        response.data.data.forEach(status => {
+        response.data.data.forEach(statusItem => {
+            let statusState;
+            let statusButtons;
+            if(statusItem.is_active == 1){
+                statusState = "Active";
+                statusButtons = `<button class="btn btn-danger btn-sm deactivate">De-activate</button>`;
+            }
+            else if(statusItem.is_active == 0){
+                statusState = "Inactive";
+                statusButtons = `<button class="btn btn-primary btn-sm reactivate">Re-activate</button>`;
+            }
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${status.status_desc}</td>
+                <td>${statusItem.status_desc}</td>
+                <td>${statusState}</td>
                 <td>
                     <button class="btn btn-secondary btn-sm view">View</button>
                     <button class="btn btn-success btn-sm update">Update</button>
+                    ${statusButtons}
                 </td>
             `;
             tbody.appendChild(row);
 
             row.querySelector(".view").addEventListener('click', () => {
-                viewStatus(status.status_id);
+                viewStatus(statusItem.status_id);
             })
             row.querySelector(".update").addEventListener('click', () => {
-                updateStatus(status.status_id, () => getAllStatuses(currentStatusesPage));
+                updateStatus(statusItem.status_id, () => getAllStatuses(currentStatusesPage));
             })
+
+            const deactivateBtn = row.querySelector(".deactivate");
+            if(deactivateBtn){
+                deactivateBtn.addEventListener('click', () => {
+                    deactivateStatus(statusItem.status_id, () => getAllStatuses(currentStatusesPage));
+                })
+            }
+
+            const reactivateBtn = row.querySelector(".reactivate");
+            if(reactivateBtn){
+                reactivateBtn.addEventListener('click', () => {
+                    reactivateStatus(statusItem.status_id, () => getAllStatuses(currentStatusesPage));
+                })
+            }
         })
         table.appendChild(tbody);
         statusestablediv.appendChild(table);
@@ -279,6 +378,7 @@ const getAllConditions = async(page = 1) => {
     thead.innerHTML = `
         <tr>
             <th>Condition</th>
+            <th>Status</th>
             <th>Action</th>
         </tr>
     `;
@@ -289,12 +389,24 @@ const getAllConditions = async(page = 1) => {
     if(response.status == 200){
         console.log(response.data);
         response.data.data.forEach(condition => {
+            let status;
+            let statusButtons;
+            if(condition.is_active == 1){
+                status = "Active";
+                statusButtons = `<button class="btn btn-danger btn-sm deactivate">De-activate</button>`;
+            }
+            else if(condition.is_active == 0){
+                status = "Inactive";
+                statusButtons = `<button class="btn btn-primary btn-sm reactivate">Re-activate</button>`;
+            }
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${condition.condition_desc}</td>
+                <td>${status}</td>
                 <td>
                     <button class="btn btn-secondary btn-sm view">View</button>
                     <button class="btn btn-success btn-sm update">Update</button>
+                    ${statusButtons}
                 </td>
             `;
             tbody.appendChild(row);
@@ -305,6 +417,20 @@ const getAllConditions = async(page = 1) => {
             row.querySelector(".update").addEventListener('click', () => {
                 updateCondition(condition.condition_id, () => getAllConditions(currentConditionsPage));
             })
+
+            const deactivateBtn = row.querySelector(".deactivate");
+            if(deactivateBtn){
+                deactivateBtn.addEventListener('click', () => {
+                    deactivateCondition(condition.condition_id, () => getAllConditions(currentConditionsPage));
+                })
+            }
+
+            const reactivateBtn = row.querySelector(".reactivate");
+            if(reactivateBtn){
+                reactivateBtn.addEventListener('click', () => {
+                    reactivateCondition(condition.condition_id, () => getAllConditions(currentConditionsPage));
+                })
+            }
         })
         table.appendChild(tbody);
         conditionstablediv.appendChild(table);
@@ -334,6 +460,7 @@ const getAllDisposalReasons = async(page = 1) => {
     thead.innerHTML = `
         <tr>
             <th>Reason</th>
+            <th>Status</th>
             <th>Action</th>
         </tr>
     `;
@@ -344,12 +471,24 @@ const getAllDisposalReasons = async(page = 1) => {
     if(response.status == 200){
         console.log(response.data);
         response.data.data.forEach(reason => {
+            let status;
+            let statusButtons;
+            if(reason.is_active == 1){
+                status = "Active";
+                statusButtons = `<button class="btn btn-danger btn-sm deactivate">De-activate</button>`;
+            }
+            else if(reason.is_active == 0){
+                status = "Inactive";
+                statusButtons = `<button class="btn btn-primary btn-sm reactivate">Re-activate</button>`;
+            }
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${reason.reason_desc}</td>
+                <td>${status}</td>
                 <td>
                     <button class="btn btn-secondary btn-sm view">View</button>
                     <button class="btn btn-success btn-sm update">Update</button>
+                    ${statusButtons}
                 </td>
             `;
             tbody.appendChild(row);
@@ -360,6 +499,20 @@ const getAllDisposalReasons = async(page = 1) => {
             row.querySelector(".update").addEventListener('click', () => {
                 updateDisposalReason(reason.reason_id, () => getAllDisposalReasons(currentDisposalReasonsPage));
             })
+
+            const deactivateBtn = row.querySelector(".deactivate");
+            if(deactivateBtn){
+                deactivateBtn.addEventListener('click', () => {
+                    deactivateDisposalReason(reason.reason_id, () => getAllDisposalReasons(currentDisposalReasonsPage));
+                })
+            }
+
+            const reactivateBtn = row.querySelector(".reactivate");
+            if(reactivateBtn){
+                reactivateBtn.addEventListener('click', () => {
+                    reactivateDisposalReason(reason.reason_id, () => getAllDisposalReasons(currentDisposalReasonsPage));
+                })
+            }
         })
         table.appendChild(tbody);
         disposalreasonstablediv.appendChild(table);
@@ -729,6 +882,7 @@ const getAllAuthors = async(page = 1) => {
     thead.innerHTML = `
         <tr>
             <th>Author Name</th>
+            <th>Status</th>
             <th>Actions</th>
         </tr>
     `;
@@ -745,12 +899,24 @@ const getAllAuthors = async(page = 1) => {
             </div>
         `;
         response.data.data.forEach(author => { 
+            let status;
+            let statusButtons;
+            if(author.is_active == 1){
+                status = "Active";
+                statusButtons = `<button class="btn btn-danger btn-sm deactivate">De-activate</button>`;
+            }
+            else if(author.is_active == 0){
+                status = "Inactive";
+                statusButtons = `<button class="btn btn-primary btn-sm reactivate">Re-activate</button>`;
+            }
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${author.author_name}</td>
+                <td>${status}</td>
                 <td>
                     <button class="btn btn-secondary btn-sm view">View</button>
                     <button class="btn btn-success btn-sm update">Update</button>
+                    ${statusButtons}
                 </td>
             `;
             tbody.appendChild(row);
@@ -761,6 +927,20 @@ const getAllAuthors = async(page = 1) => {
             row.querySelector(".update").addEventListener('click', () => {
                 updateAuthor(author.author_id, () => getAllAuthors(currentAuthorsPage));
             })
+
+            const deactivateBtn = row.querySelector(".deactivate");
+            if(deactivateBtn){
+                deactivateBtn.addEventListener('click', () => {
+                    deactivateAuthor(author.author_id, () => getAllAuthors(currentAuthorsPage));
+                })
+            }
+
+            const reactivateBtn = row.querySelector(".reactivate");
+            if(reactivateBtn){
+                reactivateBtn.addEventListener('click', () => {
+                    reactivateAuthor(author.author_id, () => getAllAuthors(currentAuthorsPage));
+                })
+            }
         })
         table.appendChild(tbody);
         authorstablediv.appendChild(table);
@@ -790,6 +970,8 @@ const getAllPublishers = async(page = 1) => {
     thead.innerHTML = `
         <tr>
             <th>Publisher Name</th>
+            <th>Status</th>
+            <th>Actions</th>
         </tr>
     `;
     table.appendChild(thead);
@@ -799,12 +981,24 @@ const getAllPublishers = async(page = 1) => {
     if(response.status == 200){
         console.log(response.data);
         response.data.data.forEach(publisher => { 
+            let status;
+            let statusButtons;
+            if(publisher.is_active == 1){
+                status = "Active";
+                statusButtons = `<button class="btn btn-danger btn-sm deactivate">De-activate</button>`;
+            }
+            else if(publisher.is_active == 0){
+                status = "Inactive";
+                statusButtons = `<button class="btn btn-primary btn-sm reactivate">Re-activate</button>`;
+            }
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${publisher.publisher_name}</td>
+                <td>${status}</td>
                 <td>
                     <button class="btn btn-secondary btn-sm view">View</button>
                     <button class="btn btn-success btn-sm update">Update</button>
+                    ${statusButtons}
                 </td>
             `;
             tbody.appendChild(row);
@@ -815,6 +1009,20 @@ const getAllPublishers = async(page = 1) => {
             row.querySelector(".update").addEventListener('click', () => {
                 updatePublisher(publisher.publisher_id, () => getAllPublishers(currentPublishersPage));
             })
+
+            const deactivateBtn = row.querySelector(".deactivate");
+            if(deactivateBtn){
+                deactivateBtn.addEventListener('click', () => {
+                    deactivatePublisher(publisher.publisher_id, () => getAllPublishers(currentPublishersPage));
+                })
+            }
+
+            const reactivateBtn = row.querySelector(".reactivate");
+            if(reactivateBtn){
+                reactivateBtn.addEventListener('click', () => {
+                    reactivatePublisher(publisher.publisher_id, () => getAllPublishers(currentPublishersPage));
+                })
+            }
         })
         table.appendChild(tbody);
         publisherstablediv.appendChild(table);
@@ -844,6 +1052,7 @@ const getAllGenres = async(page = 1) => {
     thead.innerHTML = `
         <tr>
             <th>Genre Name</th>
+            <th>Status</th>
             <th>Action</th>
         </tr>
     `;
@@ -854,12 +1063,24 @@ const getAllGenres = async(page = 1) => {
     if(response.status == 200){
         console.log(response.data);
         response.data.data.forEach(genre => {
+            let status;
+            let statusButtons;
+            if(genre.is_active == 1){
+                status = "Active";
+                statusButtons = `<button class="btn btn-danger btn-sm deactivate">De-activate</button>`;
+            }
+            else if(genre.is_active == 0){
+                status = "Inactive";
+                statusButtons = `<button class="btn btn-primary btn-sm reactivate">Re-activate</button>`;
+            }
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${genre.genre_name}</td>
+                <td>${status}</td>
                 <td>
                     <button class="btn btn-secondary btn-sm view">View</button>
                     <button class="btn btn-success btn-sm update">Update</button>
+                    ${statusButtons}
                 </td>
             `;
             tbody.appendChild(row);
@@ -870,6 +1091,20 @@ const getAllGenres = async(page = 1) => {
             row.querySelector(".update").addEventListener('click', () => {
                 updateGenre(genre.genre_id, () => getAllGenres(currentGenresPage));
             })
+
+            const deactivateBtn = row.querySelector(".deactivate");
+            if(deactivateBtn){
+                deactivateBtn.addEventListener('click', () => {
+                    deactivateGenre(genre.genre_id, () => getAllGenres(currentGenresPage));
+                })
+            }
+
+            const reactivateBtn = row.querySelector(".reactivate");
+            if(reactivateBtn){
+                reactivateBtn.addEventListener('click', () => {
+                    reactivateGenre(genre.genre_id, () => getAllGenres(currentGenresPage));
+                })
+            }
         })
         table.appendChild(tbody);
         genrestablediv.appendChild(table);
@@ -900,6 +1135,7 @@ const getAllCategories = async(page = 1) => {
     <tr>
         <th>Category Type</th>
         <th>Borrow Duration</th>
+        <th>Status</th>
         <th>Action</th>
     </tr>
     `;
@@ -910,13 +1146,25 @@ const getAllCategories = async(page = 1) => {
     if(response.status == 200){
         console.log(response.data); 
         response.data.data.forEach(category => {
+            let status;
+            let statusButtons;
+            if(category.is_active == 1){
+                status = "Active";
+                statusButtons = `<button class="btn btn-danger btn-sm deactivate">De-activate</button>`;
+            }
+            else if(category.is_active == 0){
+                status = "Inactive";
+                statusButtons = `<button class="btn btn-primary btn-sm reactivate">Re-activate</button>`;
+            }
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${category.category_type}</td>
                 <td>${category.borrow_duration + " days"}</td>
+                <td>${status}</td>
                 <td>
                     <button class="btn btn-secondary btn-sm view">View</button>
                     <button class="btn btn-success btn-sm update">Update</button>
+                    ${statusButtons}
                 </td>
             `;
             tbody.appendChild(row);
@@ -927,6 +1175,20 @@ const getAllCategories = async(page = 1) => {
             row.querySelector(".update").addEventListener('click', () => {
                 updateCategory(category.category_id, () => getAllCategories(currentCategoriesPage));
             })
+
+            const deactivateBtn = row.querySelector(".deactivate");
+            if(deactivateBtn){
+                deactivateBtn.addEventListener('click', () => {
+                    deactivateCategory(category.category_id, () => getAllCategories(currentCategoriesPage));
+                })
+            }
+
+            const reactivateBtn = row.querySelector(".reactivate");
+            if(reactivateBtn){
+                reactivateBtn.addEventListener('click', () => {
+                    reactivateCategory(category.category_id, () => getAllCategories(currentCategoriesPage));
+                })
+            }
         })
         table.appendChild(tbody);
         categoriestablediv.appendChild(table);
@@ -1464,7 +1726,7 @@ document.addEventListener('DOMContentLoaded', async() => {
         }, 300);
     })
     document.getElementById('addcategory').addEventListener('click', () => {
-    addCategory(() => getAllCategories(currentCategoriesPage));
+        addCategory(() => getAllCategories(currentCategoriesPage));
     })
     document.getElementById('addauthor').addEventListener('click', () => {
         addAuthor(() => getAllAuthors(currentAuthorsPage));

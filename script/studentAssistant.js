@@ -25,14 +25,14 @@ import { updatePublisher } from "./publishermodules/update.js";
 const url = `${location.origin}/LMS/api`;
 sessionStorage.setItem("url", url);
 
-const fetchAllRows = async(file, operation) => {
+const fetchAllRows = async(file, operation, extraParams = {}) => {
     let rows = [];
     let page = 1;
     let totalPages = 1;
 
     do{
         const response = await axios.get(`${url}/${file}`,{
-            params:{operation: operation, json: JSON.stringify({ page: page, limit: 100 })}
+            params:{operation: operation, json: JSON.stringify({ page: page, limit: 100, ...extraParams })}
         })
         rows = rows.concat(response.data.data);
         totalPages = response.data.totalPages;
@@ -42,11 +42,11 @@ const fetchAllRows = async(file, operation) => {
     return rows;
 }
 
-const loadAuthors = () => fetchAllRows('authors.php', 'getAllAuthors');
-const loadPublishers = () => fetchAllRows('publishers.php', 'getAllPublishers');
-const loadGenres = () => fetchAllRows('genres.php', 'getAllGenres');
-const loadCategories = () => fetchAllRows('categories.php', 'getAllCategories');
-const loadConditions = () => fetchAllRows('conditions.php', 'getAllConditions');
+const loadAuthors = () => fetchAllRows('authors.php', 'getAllAuthors', { active_only: 1 });
+const loadPublishers = () => fetchAllRows('publishers.php', 'getAllPublishers', { active_only: 1 });
+const loadGenres = () => fetchAllRows('genres.php', 'getAllGenres', { active_only: 1 });
+const loadCategories = () => fetchAllRows('categories.php', 'getAllCategories', { active_only: 1 });
+const loadConditions = () => fetchAllRows('conditions.php', 'getAllConditions', { active_only: 1 });
 
 //author/category/genre/publisher lists para sa add/update book modals
 const loadBookLists = () => Promise.all([loadAuthors(), loadCategories(), loadGenres(), loadPublishers()]);
@@ -313,6 +313,7 @@ const getAllAuthors = async(page = 1) => {
     thead.innerHTML = `
         <tr>
             <th>Author Name</th>
+            <th>Status</th>
             <th>Actions</th>
         </tr>
     `;
@@ -329,9 +330,11 @@ const getAllAuthors = async(page = 1) => {
             </div>
         `;
         response.data.data.forEach(author => { 
+            const status = author.is_active == 1 ? "Active" : "Inactive";
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${author.author_name}</td>
+                <td>${status}</td>
                 <td>
                     <button class="btn btn-secondary btn-sm view">View</button>
                     <button class="btn btn-success btn-sm update">Update</button>
@@ -375,6 +378,7 @@ const getAllPublishers = async(page = 1) => {
     thead.innerHTML = `
         <tr>
             <th>Publisher Name</th>
+            <th>Status</th>
             <th>Actions</th>
         </tr>
     `;
@@ -391,9 +395,11 @@ const getAllPublishers = async(page = 1) => {
             </div>
         `;
         response.data.data.forEach(publisher => { 
+            const status = publisher.is_active == 1 ? "Active" : "Inactive";
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${publisher.publisher_name}</td>
+                <td>${status}</td>
                 <td>
                     <button class="btn btn-secondary btn-sm view">View</button>
                     <button class="btn btn-success btn-sm update">Update</button>

@@ -8,19 +8,22 @@
         function getAllGenres($json){
             include "connection.php";
 
-            $json = json_decode($json, true);
+            $json = json_decode($json, true) ?: [];
+
+            $activeOnly = !empty($json['active_only']);
+            $where = $activeOnly ? "WHERE is_active = 1" : "";
 
             $page  = isset($json['page']) ? max(1, (int)$json['page']) : 1;
             $limit = isset($json['limit']) ? min(100, max(1, (int)$json['limit'])) : 10;
             $offset = ($page - 1) * $limit;
 
-            //total count para sa ibuild nga pages sa frontend
-            $sqlCount = "SELECT COUNT(*) FROM genres";
+            $sqlCount = "SELECT COUNT(*) FROM genres $where";
             $stmtCount = $conn->prepare($sqlCount);
             $stmtCount->execute();
             $totalRows = (int)$stmtCount->fetchColumn();
 
-            $sql = "SELECT * FROM genres
+            $sql = "SELECT genre_id, genre_name, is_active FROM genres
+                $where
                 ORDER BY genre_name
                 LIMIT :limit OFFSET :offset";
             $stmt = $conn->prepare($sql);
@@ -58,7 +61,7 @@
 
             $json = json_decode($json, true);
 
-            $sql = "SELECT * FROM genres
+            $sql = "SELECT genre_id, genre_name, is_active FROM genres
             WHERE genre_id=:genre_id";
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(":genre_id", $json['genre_id']);
@@ -76,7 +79,7 @@
             WHERE genre_id=:genre_id";
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(":genre_id", $json['genre_id']);
-            $stmt->bindParam("genre_name", $json['genre_name']);
+            $stmt->bindParam(":genre_name", $json['genre_name']);
             $stmt->execute();
             $returnValue = 0;
 
@@ -85,25 +88,67 @@
             }
             return json_encode($returnValue);
         }
-        function deleteGenre($json){
+        function deactivateGenre($json){
             include "connection.php";
 
             $json = json_decode($json, true);
 
-            $sql = "DELETE FROM genres
-            WHERE genre_id=:genre_id";
+            $checkSql = "SELECT is_active FROM genres WHERE genre_id = :genre_id";
+            $checkStmt = $conn->prepare($checkSql);
+            $checkStmt->bindParam(":genre_id", $json['genre_id']);
+            $checkStmt->execute();
+            $genre = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+            if(!$genre){
+                return "Invalid Genre";
+            }
+            if($genre['is_active'] == 0){
+                return "Genre is already inactive";
+            }
+
+            $sql = "UPDATE genres SET is_active=0 WHERE genre_id=:genre_id";
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(":genre_id", $json['genre_id']);
             $stmt->execute();
-            $returnValue = 0;
 
+            $returnValue = 0;
             if($stmt->rowCount() > 0){
                 $returnValue = 1;
             }
+
+            return json_encode($returnValue);
+        }
+        function reactivateGenre($json){
+            include "connection.php";
+
+            $json = json_decode($json, true);
+
+            $checkSql = "SELECT is_active FROM genres WHERE genre_id = :genre_id";
+            $checkStmt = $conn->prepare($checkSql);
+            $checkStmt->bindParam(":genre_id", $json['genre_id']);
+            $checkStmt->execute();
+            $genre = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+            if(!$genre){
+                return "Invalid Genre";
+            }
+            if($genre['is_active'] == 1){
+                return "Genre is already active";
+            }
+
+            $sql = "UPDATE genres SET is_active=1 WHERE genre_id=:genre_id";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindParam(":genre_id", $json['genre_id']);
+            $stmt->execute();
+
+            $returnValue = 0;
+            if($stmt->rowCount() > 0){
+                $returnValue = 1;
+            }
+
             return json_encode($returnValue);
         }
     }
-    
 
     if($_SERVER['REQUEST_METHOD'] == 'GET'){
         $operation = $_GET['operation'];
@@ -128,8 +173,11 @@
         case "updateGenre":
             echo $genre->updateGenre($json);
             break; 
-        case "deleteGenre":
-            echo $genre->deleteGenre($json);
+        case "deactivateGenre":
+            echo $genre->deactivateGenre($json);
+            break;
+        case "reactivateGenre":
+            echo $genre->reactivateGenre($json);
             break;
     }
 ?>

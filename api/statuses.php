@@ -8,19 +8,22 @@
         function getAllStatuses($json){
             include "connection.php";
 
-            $json = json_decode($json, true);
+            $json = json_decode($json, true) ?: [];
+
+            $activeOnly = !empty($json['active_only']);
+            $where = $activeOnly ? "WHERE is_active = 1" : "";
 
             $page  = isset($json['page']) ? max(1, (int)$json['page']) : 1;
             $limit = isset($json['limit']) ? min(100, max(1, (int)$json['limit'])) : 10;
             $offset = ($page - 1) * $limit;
 
-            //total count para sa ibuild nga pages sa frontend
-            $sqlCount = "SELECT COUNT(*) FROM statuses";
+            $sqlCount = "SELECT COUNT(*) FROM statuses $where";
             $stmtCount = $conn->prepare($sqlCount);
             $stmtCount->execute();
             $totalRows = (int)$stmtCount->fetchColumn();
 
-            $sql = "SELECT * FROM statuses
+            $sql = "SELECT status_id, status_desc, is_active FROM statuses
+                $where
                 ORDER BY status_desc
                 LIMIT :limit OFFSET :offset";
             $stmt = $conn->prepare($sql);
@@ -58,7 +61,7 @@
 
             $json = json_decode($json, true);
 
-            $sql = "SELECT * FROM statuses
+            $sql = "SELECT status_id, status_desc, is_active FROM statuses
             WHERE status_id=:status_id";
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(":status_id", $json['status_id']);
@@ -85,21 +88,64 @@
             }
             return json_encode($returnValue);
         }
-        function deleteStatus($json){
+        function deactivateStatus($json){
             include "connection.php";
 
             $json = json_decode($json, true);
 
-            $sql = "DELETE FROM statuses
-            WHERE status_id=:status_id";
+            $checkSql = "SELECT is_active FROM statuses WHERE status_id = :status_id";
+            $checkStmt = $conn->prepare($checkSql);
+            $checkStmt->bindParam(":status_id", $json['status_id']);
+            $checkStmt->execute();
+            $status = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+            if(!$status){
+                return "Invalid Status";
+            }
+            if($status['is_active'] == 0){
+                return "Status is already inactive";
+            }
+
+            $sql = "UPDATE statuses SET is_active=0 WHERE status_id=:status_id";
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(":status_id", $json['status_id']);
             $stmt->execute();
-            $returnValue = 0;
 
+            $returnValue = 0;
             if($stmt->rowCount() > 0){
                 $returnValue = 1;
             }
+
+            return json_encode($returnValue);
+        }
+        function reactivateStatus($json){
+            include "connection.php";
+
+            $json = json_decode($json, true);
+
+            $checkSql = "SELECT is_active FROM statuses WHERE status_id = :status_id";
+            $checkStmt = $conn->prepare($checkSql);
+            $checkStmt->bindParam(":status_id", $json['status_id']);
+            $checkStmt->execute();
+            $status = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+            if(!$status){
+                return "Invalid Status";
+            }
+            if($status['is_active'] == 1){
+                return "Status is already active";
+            }
+
+            $sql = "UPDATE statuses SET is_active=1 WHERE status_id=:status_id";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindParam(":status_id", $json['status_id']);
+            $stmt->execute();
+
+            $returnValue = 0;
+            if($stmt->rowCount() > 0){
+                $returnValue = 1;
+            }
+
             return json_encode($returnValue);
         }
     }
@@ -127,8 +173,11 @@
         case "updateStatus":
             echo $status->updateStatus($json);
             break;
-        case "deleteStatus":
-            echo $status->deleteStatus($json);
+        case "deactivateStatus":
+            echo $status->deactivateStatus($json);
+            break;
+        case "reactivateStatus":
+            echo $status->reactivateStatus($json);
             break;
     }
 ?>

@@ -8,19 +8,22 @@
         function getAllDepartments($json){
             include "connection.php";
 
-            $json = json_decode($json, true);
+            $json = json_decode($json, true) ?: [];
+
+            $activeOnly = !empty($json['active_only']);
+            $where = $activeOnly ? "WHERE is_active = 1" : "";
 
             $page  = isset($json['page']) ? max(1, (int)$json['page']) : 1;
             $limit = isset($json['limit']) ? min(100, max(1, (int)$json['limit'])) : 10;
             $offset = ($page - 1) * $limit;
 
-            //total count para sa ibuild nga pages sa frontend
-            $sqlCount = "SELECT COUNT(*) FROM departments";
+            $sqlCount = "SELECT COUNT(*) FROM departments $where";
             $stmtCount = $conn->prepare($sqlCount);
             $stmtCount->execute();
             $totalRows = (int)$stmtCount->fetchColumn();
 
-            $sql = "SELECT * FROM departments
+            $sql = "SELECT department_id, department_name, is_active FROM departments
+                $where
                 ORDER BY department_name
                 LIMIT :limit OFFSET :offset";
             $stmt = $conn->prepare($sql);
@@ -58,7 +61,7 @@
 
             $json = json_decode($json, true);
 
-            $sql = "SELECT * FROM departments
+            $sql = "SELECT department_id, department_name, is_active FROM departments
             WHERE department_id=:department_id";
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(":department_id", $json['department_id']);
@@ -85,21 +88,64 @@
             }
             return json_encode($returnValue);
         }
-        function deleteDepartment($json){
+        function deactivateDepartment($json){
             include "connection.php";
 
             $json = json_decode($json, true);
 
-            $sql = "DELETE FROM departments
-            WHERE department_id=:department_id";
+            $checkSql = "SELECT is_active FROM departments WHERE department_id = :department_id";
+            $checkStmt = $conn->prepare($checkSql);
+            $checkStmt->bindParam(":department_id", $json['department_id']);
+            $checkStmt->execute();
+            $department = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+            if(!$department){
+                return "Invalid Department";
+            }
+            if($department['is_active'] == 0){
+                return "Department is already inactive";
+            }
+
+            $sql = "UPDATE departments SET is_active=0 WHERE department_id=:department_id";
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(":department_id", $json['department_id']);
             $stmt->execute();
-            $returnValue = 0;
 
+            $returnValue = 0;
             if($stmt->rowCount() > 0){
                 $returnValue = 1;
             }
+
+            return json_encode($returnValue);
+        }
+        function reactivateDepartment($json){
+            include "connection.php";
+
+            $json = json_decode($json, true);
+
+            $checkSql = "SELECT is_active FROM departments WHERE department_id = :department_id";
+            $checkStmt = $conn->prepare($checkSql);
+            $checkStmt->bindParam(":department_id", $json['department_id']);
+            $checkStmt->execute();
+            $department = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+            if(!$department){
+                return "Invalid Department";
+            }
+            if($department['is_active'] == 1){
+                return "Department is already active";
+            }
+
+            $sql = "UPDATE departments SET is_active=1 WHERE department_id=:department_id";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindParam(":department_id", $json['department_id']);
+            $stmt->execute();
+
+            $returnValue = 0;
+            if($stmt->rowCount() > 0){
+                $returnValue = 1;
+            }
+
             return json_encode($returnValue);
         }
     }
@@ -127,8 +173,11 @@
         case "updateDepartment":
             echo $department->updateDepartment($json);
             break;
-        case "deleteDepartment":
-            echo $department->deleteDepartment($json);
+        case "deactivateDepartment":
+            echo $department->deactivateDepartment($json);
+            break;
+        case "reactivateDepartment":
+            echo $department->reactivateDepartment($json);
             break;
     }
 ?>

@@ -8,19 +8,22 @@
         function getAllRoles($json){
             include "connection.php";
 
-            $json = json_decode($json, true);
+            $json = json_decode($json, true) ?: [];
+
+            $activeOnly = !empty($json['active_only']);
+            $where = $activeOnly ? "WHERE is_active = 1" : "";
 
             $page  = isset($json['page']) ? max(1, (int)$json['page']) : 1;
             $limit = isset($json['limit']) ? min(100, max(1, (int)$json['limit'])) : 10;
             $offset = ($page - 1) * $limit;
 
-            //total count para sa ibuild nga pages sa frontend
-            $sqlCount = "SELECT COUNT(*) FROM roles";
+            $sqlCount = "SELECT COUNT(*) FROM roles $where";
             $stmtCount = $conn->prepare($sqlCount);
             $stmtCount->execute();
             $totalRows = (int)$stmtCount->fetchColumn();
 
-            $sql = "SELECT * FROM roles
+            $sql = "SELECT role_id, role_type, is_active FROM roles
+                $where
                 ORDER BY role_type
                 LIMIT :limit OFFSET :offset";
             $stmt = $conn->prepare($sql);
@@ -58,7 +61,7 @@
 
             $json = json_decode($json, true);
 
-            $sql = "SELECT * FROM roles
+            $sql = "SELECT role_id, role_type, is_active FROM roles
             WHERE role_id=:role_id";
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(":role_id", $json['role_id']);
@@ -85,21 +88,64 @@
             }
             return json_encode($returnValue);
         }
-        function deleteRole($json){
+        function deactivateRole($json){
             include "connection.php";
 
             $json = json_decode($json, true);
 
-            $sql = "DELETE FROM roles
-            WHERE role_id=:role_id";
+            $checkSql = "SELECT is_active FROM roles WHERE role_id = :role_id";
+            $checkStmt = $conn->prepare($checkSql);
+            $checkStmt->bindParam(":role_id", $json['role_id']);
+            $checkStmt->execute();
+            $role = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+            if(!$role){
+                return "Invalid Role";
+            }
+            if($role['is_active'] == 0){
+                return "Role is already inactive";
+            }
+
+            $sql = "UPDATE roles SET is_active=0 WHERE role_id=:role_id";
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(":role_id", $json['role_id']);
             $stmt->execute();
-            $returnValue = 0;
 
+            $returnValue = 0;
             if($stmt->rowCount() > 0){
                 $returnValue = 1;
             }
+
+            return json_encode($returnValue);
+        }
+        function reactivateRole($json){
+            include "connection.php";
+
+            $json = json_decode($json, true);
+
+            $checkSql = "SELECT is_active FROM roles WHERE role_id = :role_id";
+            $checkStmt = $conn->prepare($checkSql);
+            $checkStmt->bindParam(":role_id", $json['role_id']);
+            $checkStmt->execute();
+            $role = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+            if(!$role){
+                return "Invalid Role";
+            }
+            if($role['is_active'] == 1){
+                return "Role is already active";
+            }
+
+            $sql = "UPDATE roles SET is_active=1 WHERE role_id=:role_id";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindParam(":role_id", $json['role_id']);
+            $stmt->execute();
+
+            $returnValue = 0;
+            if($stmt->rowCount() > 0){
+                $returnValue = 1;
+            }
+
             return json_encode($returnValue);
         }
     }
@@ -127,8 +173,11 @@
         case "updateRole":
             echo $role->updateRole($json);
             break;
-        case "deleteRole":
-            echo $role->deleteRole($json);
+        case "deactivateRole":
+            echo $role->deactivateRole($json);
+            break;
+        case "reactivateRole":
+            echo $role->reactivateRole($json);
             break;
     }
 ?>

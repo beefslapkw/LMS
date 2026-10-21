@@ -8,19 +8,22 @@
         function getAllConditions($json){
             include "connection.php";
 
-            $json = json_decode($json, true);
+            $json = json_decode($json, true) ?: [];
+
+            $activeOnly = !empty($json['active_only']);
+            $where = $activeOnly ? "WHERE is_active = 1" : "";
             
             $page  = isset($json['page']) ? max(1, (int)$json['page']) : 1;
             $limit = isset($json['limit']) ? min(100, max(1, (int)$json['limit'])) : 10;
             $offset = ($page - 1) * $limit;
 
-            //total count para sa ibuild nga pages sa frontend
-            $sqlCount = "SELECT COUNT(*) FROM conditions";
+            $sqlCount = "SELECT COUNT(*) FROM conditions $where";
             $stmtCount = $conn->prepare($sqlCount);
             $stmtCount->execute();
             $totalRows = (int)$stmtCount->fetchColumn();
 
-            $sql = "SELECT * FROM conditions
+            $sql = "SELECT condition_id, condition_desc, is_active FROM conditions
+                $where
                 ORDER BY condition_desc
                 LIMIT :limit OFFSET :offset";
             $stmt = $conn->prepare($sql);
@@ -58,7 +61,7 @@
 
             $json = json_decode($json, true);
 
-            $sql = "SELECT * FROM conditions
+            $sql = "SELECT condition_id, condition_desc, is_active FROM conditions
             WHERE condition_id=:condition_id";
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(":condition_id", $json['condition_id']);
@@ -85,21 +88,64 @@
             }
             return json_encode($returnValue);
         }
-        function deleteCondition($json){
+        function deactivateCondition($json){
             include "connection.php";
 
             $json = json_decode($json, true);
 
-            $sql = "DELETE FROM conditions
-            WHERE condition_id=:condition_id";
+            $checkSql = "SELECT is_active FROM conditions WHERE condition_id = :condition_id";
+            $checkStmt = $conn->prepare($checkSql);
+            $checkStmt->bindParam(":condition_id", $json['condition_id']);
+            $checkStmt->execute();
+            $condition = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+            if(!$condition){
+                return "Invalid Condition";
+            }
+            if($condition['is_active'] == 0){
+                return "Condition is already inactive";
+            }
+
+            $sql = "UPDATE conditions SET is_active=0 WHERE condition_id=:condition_id";
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(":condition_id", $json['condition_id']);
             $stmt->execute();
-            $returnValue = 0;
 
+            $returnValue = 0;
             if($stmt->rowCount() > 0){
                 $returnValue = 1;
             }
+
+            return json_encode($returnValue);
+        }
+        function reactivateCondition($json){
+            include "connection.php";
+
+            $json = json_decode($json, true);
+
+            $checkSql = "SELECT is_active FROM conditions WHERE condition_id = :condition_id";
+            $checkStmt = $conn->prepare($checkSql);
+            $checkStmt->bindParam(":condition_id", $json['condition_id']);
+            $checkStmt->execute();
+            $condition = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+            if(!$condition){
+                return "Invalid Condition";
+            }
+            if($condition['is_active'] == 1){
+                return "Condition is already active";
+            }
+
+            $sql = "UPDATE conditions SET is_active=1 WHERE condition_id=:condition_id";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindParam(":condition_id", $json['condition_id']);
+            $stmt->execute();
+
+            $returnValue = 0;
+            if($stmt->rowCount() > 0){
+                $returnValue = 1;
+            }
+
             return json_encode($returnValue);
         }
     }
@@ -127,8 +173,11 @@
         case "updateCondition":
             echo $condition->updateCondition($json);
             break;
-        case "deleteCondition":
-            echo $condition->deleteCondition($json);
+        case "deactivateCondition":
+            echo $condition->deactivateCondition($json);
+            break;
+        case "reactivateCondition":
+            echo $condition->reactivateCondition($json);
             break;
     }
 ?>

@@ -8,19 +8,22 @@
         function getAllPublishers($json){
             include "connection.php";
 
-            $json = json_decode($json, true);
+            $json = json_decode($json, true) ?: [];
+
+            $activeOnly = !empty($json['active_only']);
+            $where = $activeOnly ? "WHERE is_active = 1" : "";
 
             $page  = isset($json['page']) ? max(1, (int)$json['page']) : 1;
             $limit = isset($json['limit']) ? min(100, max(1, (int)$json['limit'])) : 10;
             $offset = ($page - 1) * $limit;
 
-            //total count para sa ibuild nga pages sa frontend
-            $sqlCount = "SELECT COUNT(*) FROM publishers";
+            $sqlCount = "SELECT COUNT(*) FROM publishers $where";
             $stmtCount = $conn->prepare($sqlCount);
             $stmtCount->execute();
             $totalRows = (int)$stmtCount->fetchColumn();
 
-            $sql = "SELECT * FROM publishers
+            $sql = "SELECT publisher_id, publisher_name, is_active FROM publishers
+                $where
                 ORDER BY publisher_name
                 LIMIT :limit OFFSET :offset";
             $stmt = $conn->prepare($sql);
@@ -58,7 +61,7 @@
 
             $json = json_decode($json, true);
 
-            $sql = "SELECT * FROM publishers
+            $sql = "SELECT publisher_id, publisher_name, is_active FROM publishers
             WHERE publisher_id=:publisher_id";
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(":publisher_id", $json['publisher_id']);
@@ -85,21 +88,64 @@
             }
             return json_encode($returnValue);
         }
-        function deletePublisher($json){
+        function deactivatePublisher($json){
             include "connection.php";
 
             $json = json_decode($json, true);
 
-            $sql = "DELETE FROM publishers
-            WHERE publisher_id=:publisher_id";
+            $checkSql = "SELECT is_active FROM publishers WHERE publisher_id = :publisher_id";
+            $checkStmt = $conn->prepare($checkSql);
+            $checkStmt->bindParam(":publisher_id", $json['publisher_id']);
+            $checkStmt->execute();
+            $publisher = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+            if(!$publisher){
+                return "Invalid Publisher";
+            }
+            if($publisher['is_active'] == 0){
+                return "Publisher is already inactive";
+            }
+
+            $sql = "UPDATE publishers SET is_active=0 WHERE publisher_id=:publisher_id";
             $stmt = $conn->prepare($sql);
             $stmt->bindParam(":publisher_id", $json['publisher_id']);
             $stmt->execute();
-            $returnValue = 0;
 
+            $returnValue = 0;
             if($stmt->rowCount() > 0){
                 $returnValue = 1;
             }
+
+            return json_encode($returnValue);
+        }
+        function reactivatePublisher($json){
+            include "connection.php";
+
+            $json = json_decode($json, true);
+
+            $checkSql = "SELECT is_active FROM publishers WHERE publisher_id = :publisher_id";
+            $checkStmt = $conn->prepare($checkSql);
+            $checkStmt->bindParam(":publisher_id", $json['publisher_id']);
+            $checkStmt->execute();
+            $publisher = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+            if(!$publisher){
+                return "Invalid Publisher";
+            }
+            if($publisher['is_active'] == 1){
+                return "Publisher is already active";
+            }
+
+            $sql = "UPDATE publishers SET is_active=1 WHERE publisher_id=:publisher_id";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindParam(":publisher_id", $json['publisher_id']);
+            $stmt->execute();
+
+            $returnValue = 0;
+            if($stmt->rowCount() > 0){
+                $returnValue = 1;
+            }
+
             return json_encode($returnValue);
         }
     }
@@ -127,8 +173,11 @@
         case "updatePublisher":
             echo $publisher->updatePublisher($json);
             break;
-        case "deletePublisher":
-            echo $publisher->deletePublisher($json);
+        case "deactivatePublisher":
+            echo $publisher->deactivatePublisher($json);
+            break;
+        case "reactivatePublisher":
+            echo $publisher->reactivatePublisher($json);
             break;
     }
 ?>

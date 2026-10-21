@@ -35,8 +35,9 @@
         'categories.php'   => ['read' => STAFF, 'write' => HEAD],
         'conditions.php'   => ['read' => STAFF, 'write' => HEAD],
 
-        'departments.php'     => ['default' => HEAD, 'ops' => ['getAllDepartments' => null]],   //public: register page dropdown
-        'disposalreasons.php' => ['default' => HEAD],
+        'departments.php'     => ['read' => ALL_ROLES, 'write' => HEAD, 'ops' => [
+                                    'getAllDepartments' => null]],  //public/all: register page dropdown
+        'disposalreasons.php' => ['read' => STAFF, 'write' => HEAD],
         'roles.php'           => ['default' => HEAD],
         'statuses.php'        => ['default' => HEAD],
 
@@ -54,7 +55,6 @@
     ];
 
     if(session_status() === PHP_SESSION_NONE){
-        //custom name para dili mag-clash sa ubang projects sa localhost
         session_name('LMS_SESSION');
         session_set_cookie_params([
             'lifetime' => 0,
@@ -90,7 +90,6 @@
         return (int)($_SESSION['role_id'] ?? 0);
     }
 
-    //true kung valid pa ang session; i-recheck sa DB ang is_active/role para dili ma-stale
     function sessionUserValid(){
         if(empty($_SESSION['user_id'])){
             return false;
@@ -131,7 +130,6 @@
         }
     }
 
-    //returns: array of roles, null (public), or false (blocked)
     function rolesFor($file, $operation){
         $rule = ACCESS[$file] ?? null;
         if($rule === null){
@@ -154,7 +152,6 @@
         return (bool)preg_match('/^(get|search)/', $operation) || $operation === 'me';
     }
 
-    //tawagon sa tanan nga API files, human sa require_once "auth.php";
     function enforceAccess(){
         $file = basename($_SERVER['SCRIPT_NAME']);
 
@@ -170,20 +167,18 @@
             deny(403, "Forbidden");
         }
 
-        //writes must be POST (CSRF protection)
         if(!isReadOperation($operation) && $_SERVER['REQUEST_METHOD'] !== 'POST'){
             deny(405, "POST required");
         }
 
         if($roles === null){
-            return;   //public (login)
+            return;
         }
         requireRole($roles);
     }
 
-    //para sa HTML pages (renamed .php): redirect imbes JSON error
     function requirePage(array $roles){
-        header('Cache-Control: no-store');   //dili makita sa back button human sa logout
+        header('Cache-Control: no-store');
 
         if(!sessionUserValid()){
             header('Location: ' . APP_PATH . '/');
@@ -195,7 +190,6 @@
         }
     }
 
-    //para sa student.php / reservations: staff pwede mo-lookup ug bisan kinsa; student/faculty sa ilang kaugalingon ra
     function resolveUserId($json){
         if(in_array(currentRoleId(), STAFF, true) && is_array($json) && !empty($json['user_id'])){
             return (int)$json['user_id'];
