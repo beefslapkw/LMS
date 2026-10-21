@@ -7,6 +7,7 @@ authReady.then(me => {
 });
 
 let allBooks = []; 
+let availableCounts = {};
 
 const renderPagination = (container, curPage, totalPages, goTo) => {
     if(totalPages <= 1) return;
@@ -45,7 +46,6 @@ const renderPagination = (container, curPage, totalPages, goTo) => {
     container.appendChild(pagination);
 };
 
-
 let currentCatalogPage = 1;
 const booksPerPage = 10;
 
@@ -60,6 +60,7 @@ const getCatalog = async(page = 1) => {
         console.log(response.data.data);
         allBooks = response.data;
         console.log(allBooks);
+        availableCounts = await getAvailableCountsByBook(allBooks.data.map(book => book.book_id));
         renderCatalog(allBooks);
     }
     else{
@@ -81,6 +82,8 @@ const renderCatalog = (books) => {
             <th>Category</th>
             <th>Publisher</th>
             <th>Shelf Location</th>
+            <th>Available</th>
+            <th>Action</th>
         </tr>
     `;
     table.appendChild(thead);
@@ -88,6 +91,7 @@ const renderCatalog = (books) => {
     const tbody = document.createElement('tbody');
 
     books.data.forEach(book => {
+        const availableCount = availableCounts[book.book_id] || 0;
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${book.book_title}</td>
@@ -96,8 +100,16 @@ const renderCatalog = (books) => {
             <td>${book.category_type}</td>
             <td>${book.publisher_name}</td>
             <td>${book.shelf_location}</td>
+            <td>${availableCount}</td>
+            <td>
+                <button class="btn btn-success btn-sm reserve" ${availableCount > 0 ? '' : 'disabled'}>Reserve</button>
+            </td>
         `;
         tbody.appendChild(row);
+
+        row.querySelector(".reserve").addEventListener('click', () => {
+            reserveBook(book);
+        })
     })
 
     table.appendChild(tbody);
@@ -334,6 +346,193 @@ const getBorrowedCount = async() => {
     }
 }
 
+const getAvailableCountsByBook = async(bookIds) => {
+    if(bookIds.length === 0){
+        return {};
+    }
+
+    const response = await axios.get(`${url}/bookcopies.php`,{
+        params:{operation:"getAvailableCountsByBook", json: JSON.stringify({ book_ids: bookIds })}
+    })
+
+    return response.data || {};
+}
+
+const reserveBook = async(book) => {
+    const confirmation = await Swal.fire({
+        title: 'Reserve this book?',
+        text: book.book_title,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Reserve'
+    });
+    if(!confirmation.isConfirmed){
+        return;
+    }
+
+    const jsondata = {
+        header: {
+            borrower_id: sessionStorage.userId
+        },
+        details: [{ book_id: book.book_id }]
+    };
+
+    const formData = new FormData();
+    formData.append('operation', "addReservation");
+    formData.append('json', JSON.stringify(jsondata));
+
+    const response = await axios({
+        url: `${url}/reservationtransactions.php`,
+        method: "POST",
+        data: formData
+    })
+
+    console.log(response.data);
+    if(response.data == 1){
+        Swal.fire({
+            title: 'Success',
+            text: "Book reserved. Pick it up at the library before the deadline shown in My Reservations.",
+            icon: 'success'
+        })
+        getCatalog(currentCatalogPage);
+        getMyReservations(1);
+        getAvailableCount();
+    }
+    else{
+        Swal.fire({
+            title: 'Failed',
+            text: typeof response.data === 'string' ? response.data : "Failed to reserve the book",
+            icon: 'error'
+        })
+    }
+}
+
+let currentReservationsPage = 1;
+const reservationsPerPage = 10;
+let reservationsfilter = 'active';
+
+const reservationStatusBadges = {
+    Active:    '<span class="badge bg-success">Active</span>',
+    Fulfilled: '<span class="badge bg-primary">Picked up</span>',
+    Cancelled: '<span class="badge bg-secondary">Cancelled</span>',
+    Expired:   '<span class="badge bg-danger">Expired</span>'
+};
+
+const getMyReservations = async(page = 1) => {
+    currentReservationsPage = page;
+    const reservationstablediv = document.getElementById('reservationstablediv');
+
+    const response = await axios.get(`${url}/reservationtransactions.php`,{
+        params:{operation:"getAllReservations", json: JSON.stringify({ borrower_id: sessionStorage.userId, status: reservationsfilter, page: page, limit: reservationsPerPage })}
+    })
+
+    reservationstablediv.innerHTML = '';
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+        <tr>
+            <th>Accession Number</th>
+            <th>Book Title</th>
+            <th>Reserved At</th>
+            <th>Pick Up Until</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    `;
+    table.appendChild(thead);
+    table.classList.add("table", "table-hover", "table-striped", "table-sm");
+    const tbody = document.createElement('tbody');
+
+    if(response.status == 200){
+        console.log(response.data);
+        if(response.data.data.length === 0){
+            const empty = document.createElement('tr');
+            empty.innerHTML = `<td colspan="6" class="text-center text-muted py-3">No reservations found.</td>`;
+            tbody.appendChild(empty);
+        }
+        response.data.data.forEach(reservation => {
+            let cancelbutton = '';
+            if(reservation.reservation_status_desc == "Active"){
+                cancelbutton = `<button class="btn btn-danger btn-sm cancel">Cancel</button>`;
+            }
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${reservation.accession_number}</td>
+                <td>${reservation.book_title}</td>
+                <td>${reservation.reserved_at}</td>
+                <td>${reservation.expires_at}</td>
+                <td>${reservationStatusBadges[reservation.reservation_status_desc]}</td>
+                <td>${cancelbutton}</td>
+            `;
+            tbody.appendChild(row);
+
+            const cancelBtn = row.querySelector(".cancel");
+            if(cancelBtn){
+                cancelBtn.addEventListener('click', async() => {
+                    const confirmation = await Swal.fire({
+                        title: 'Cancel this reservation?',
+                        text: reservation.book_title,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Yes, cancel it'
+                    });
+                    if(!confirmation.isConfirmed){
+                        return;
+                    }
+
+                    const result = await cancelMyReservation(reservation.reservation_item_id);
+                    if(result == 1){
+                        getMyReservations(currentReservationsPage);
+                        getCatalog(currentCatalogPage);
+                        getAvailableCount();
+                        Swal.fire({
+                            title: 'Success',
+                            text: "Reservation cancelled",
+                            icon: 'success'
+                        })
+                    }
+                    else{
+                        Swal.fire({
+                            title: 'Failed',
+                            text: typeof result === 'string' ? result : "Failed to cancel reservation",
+                            icon: 'error'
+                        })
+                    }
+                })
+            }
+        })
+        table.appendChild(tbody);
+        reservationstablediv.appendChild(table);
+
+        renderPagination(reservationstablediv, response.data.page, response.data.totalPages, getMyReservations);
+    }
+    else{
+        alert("ERROR");
+    }
+}
+
+const cancelMyReservation = async(reservation_item_id) => {
+    const jsondata = {
+        reservation_item_id: reservation_item_id,
+        borrower_id: sessionStorage.userId
+    };
+
+    const formData = new FormData();
+    formData.append('operation', "cancelReservationItem");
+    formData.append('json', JSON.stringify(jsondata));
+
+    const response = await axios({
+        url: `${url}/reservationtransactions.php`,
+        method: "POST",
+        data: formData
+    })
+
+    console.log(response.data);
+    return response.data;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     getCatalog();
     document.getElementById('borrowedfilter').addEventListener('change', (e) => {
@@ -341,6 +540,11 @@ document.addEventListener('DOMContentLoaded', () => {
         getMyBorrowedBooks(1);
     })
     getMyBorrowedBooks();
+    document.getElementById('reservationsfilter').addEventListener('change', (e) => {
+        reservationsfilter = e.target.value;
+        getMyReservations(1);
+    })
+    getMyReservations();
     getBorrowedCount();
     getMyFines();
     getPaymentHistory();

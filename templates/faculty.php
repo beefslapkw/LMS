@@ -19,7 +19,7 @@
                 <h2 id="welcome" class="fw-bold mb-0"></h2>
                 <small class="text-muted">Library Management Dashboard</small>
             </div>
-            <button type="button" class="btn btn-outline-danger btn-sm px-3" onclick="appLogout()">Logout</button><a type="button" class="btn btn-outline-danger btn-sm px-3" href="../index.html">Logout</a>
+            <button type="button" class="btn btn-outline-danger btn-sm px-3" onclick="appLogout()">Logout</button>
         </div>
 
         <div class="row g-3 mb-4">
@@ -51,6 +51,9 @@
                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#borrowed-tab" type="button">My Borrowed Books</button>
             </li>
             <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#reservations-tab" type="button">My Reservations</button>
+            </li>
+            <li class="nav-item">
                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#fines-tab" type="button">My Fines</button>
             </li>
         </ul>
@@ -73,6 +76,20 @@
                     <option value="returned">Returned</option>
                 </select>
                 <div id="borrowedtablediv"></div> <br>
+            </div>
+
+            <div class="tab-pane fade" id="reservations-tab">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">To reserve a book, use the Reserve button in the Book Catalog tab.</small>
+                    <select id="reservationsfilter" class="form-select form-select-sm w-auto">
+                        <option value="active" selected>Active</option>
+                        <option value="fulfilled">Picked up</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="expired">Expired</option>
+                        <option value="all">All</option>
+                    </select>
+                </div>
+                <div id="reservationstablediv"></div> <br>
             </div>
 
             <div class="tab-pane fade" id="fines-tab">

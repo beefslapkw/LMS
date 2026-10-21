@@ -58,10 +58,10 @@
         session_name('LMS_SESSION');
         session_set_cookie_params([
             'lifetime' => 0,
-            'path'     => '/',
-            'httponly' => true,
-            'samesite' => 'Lax',
-            'secure'   => !empty($_SERVER['HTTPS'])
+            'path'     => '/', //valid ang cookie sa tibuok domain, balag unsa pa na imong buhaton like mag trigger ug endpoint pwede ra kaayo borj
+            'httponly' => true, //para maharangan ang client-side scripts sa pagbasa sa cookie, para nis XSS prevention
+            'samesite' => 'Lax', //kani laban sa CSRF, so basically ayha ra ni iattach nga cookie kung gikan sa same website, para if ever nay malicious script ang pikas tab, di makuha imong session details
+            'secure'   => !empty($_SERVER['HTTPS']) //kung https, true, kung dili, false, kailangan para di maguba bahalag http ra
         ]);
         session_start();
     }
