@@ -10,10 +10,10 @@
 
     const APP_PATH = '/LMS';
     const ROLE_HOME = [
-        1 => APP_PATH . '/templates/headLibrarian.php',
-        2 => APP_PATH . '/templates/studentAssistant.php',
-        3 => APP_PATH . '/templates/student.php',
-        4 => APP_PATH . '/templates/faculty.php',
+        1 => APP_PATH . '/templates/headLibrarian.html',
+        2 => APP_PATH . '/templates/studentAssistant.html',
+        3 => APP_PATH . '/templates/student.html',
+        4 => APP_PATH . '/templates/faculty.html',
     ];
 
     const ACCESS = [

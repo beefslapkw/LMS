@@ -1,15 +1,9 @@
-<?php
-require_once "api/auth.php";
-if(sessionUserValid()){
-    header('Location: ' . (ROLE_HOME[currentRoleId()] ?? APP_PATH . '/'));
-    exit;
-}
-?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>html{visibility:hidden}</style>
     <title>Login</title>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script type="module" src="./script/login.js"></script>

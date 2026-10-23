@@ -2,15 +2,32 @@ const apiUrl = `${location.origin}/LMS/api`;
 const appUrl = `${location.origin}/LMS`;
 
 const roleHome = {
-    1: `${appUrl}/templates/headLibrarian.php`,
-    2: `${appUrl}/templates/studentAssistant.php`,
-    3: `${appUrl}/templates/student.php`,
-    4: `${appUrl}/templates/faculty.php`
+    1: `${appUrl}/templates/headLibrarian.html`,
+    2: `${appUrl}/templates/studentAssistant.html`,
+    3: `${appUrl}/templates/student.html`,
+    4: `${appUrl}/templates/faculty.html`
 }
 
 const redirectToLogin = () => {
     sessionStorage.clear();
     location.replace(`${appUrl}/`);
+}
+
+const redirectIfLoggedIn = async() => {
+    try{
+        const response = await axios.get(`${url}/users.php`, {
+            params: { operation: "me" }
+        })
+        const target = roleHome[Number(response.data && response.data.role_id)];
+        if(target){
+            location.replace(target);
+            return;
+        }
+    }
+    catch(err){
+        //401 = wala pa nakalogin, ipakita ang login form
+    }
+    document.documentElement.style.visibility = 'visible';
 }
 
 //gamit sa logout button: onclick="appLogout()"
@@ -82,7 +99,7 @@ const appLogout = async() => {
             sessionStorage.setItem('userId', me.user_id);
             window.currentUser = me;
 
-            document.documentElement.style.visibility = '';
+            document.documentElement.style.visibility = 'visible';
             return me;
         }
         catch(err){

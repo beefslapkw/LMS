@@ -1,16 +1,16 @@
-<?php require_once "../api/auth.php"; requirePage([4]); ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faculty</title>
+    <meta http-equiv="Cache-Control" content="no-store">
+    <title>Student Interface</title>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="../script/auth-guard.js" data-roles="4"></script>
+    <script src="../script/auth-guard.js" data-roles="3"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
-    <script type="module" src="../script/faculty.js"></script>
+    <script type="module" src="../script/student.js"></script>
 </head>
 <body>
     <div class="container mt-5">
@@ -57,6 +57,7 @@
                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#fines-tab" type="button">My Fines</button>
             </li>
         </ul>
+        </ul>
 
         <div class="tab-content">
 
@@ -91,7 +92,7 @@
                 </div>
                 <div id="reservationstablediv"></div> <br>
             </div>
-
+            
             <div class="tab-pane fade" id="fines-tab">
                 <ul class="nav nav-pills mb-3" id="finesnav">
                     <li class="nav-item">
@@ -111,7 +112,6 @@
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 
