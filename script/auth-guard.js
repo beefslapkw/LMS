@@ -71,7 +71,7 @@ const appLogout = async() => {
                 Swal.fire({ title: 'Not allowed', text: 'You do not have permission to do that.', icon: 'error' });
             }
             if(status === 405){
-                console.error('405: kinahanglan POST ning operation', error.config && error.config.params);
+                console.error('405: operation must be POST', error.config && error.config.params);
             }
             return Promise.reject(error);
         }
