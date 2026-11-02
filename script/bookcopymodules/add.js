@@ -15,7 +15,7 @@ export const addCopy = async(refreshDisplay) => {
             <tr>   
                 <td>Book Title</td>
                 <td>
-                    <input type="text" id="booksearch" class="form-control mb-1" placeholder="Search book title...">
+                    <input type="text" id="modal-booksearch" class="form-control mb-1" placeholder="Search book title...">
                     <div id="booklist" class="list-group" style="max-height: 180px; overflow-y: auto;"></div>
                     <div id="selectedbook" class="form-text"></div>
                 </td>
@@ -32,10 +32,10 @@ export const addCopy = async(refreshDisplay) => {
     searchBooks("");
 
     let searchTimer;
-    document.getElementById('booksearch').addEventListener('input', (e) => {
+    document.getElementById('modal-booksearch').addEventListener('input', (e) => {
         clearTimeout(searchTimer);
         searchTimer = setTimeout(() => searchBooks(e.target.value), 300);
-    });   
+    });
 
     const modalFooter = document.getElementById("blank-modal-footer");
     myHtml = `
