@@ -53,7 +53,7 @@ const getCatalog = async(page = 1) => {
     currentCatalogPage = page;
 
     const response = await axios.get(`${url}/books.php`,{
-        params:{operation:"getAllBooks", json: JSON.stringify({ page: page, limit: booksPerPage })}
+        params:{operation:"getAllBooks", json: JSON.stringify({ page: page, limit: booksPerPage, active: 1 })}
     })
 
     if(response.status == 200){

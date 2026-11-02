@@ -14,7 +14,15 @@
             $limit = isset($json['limit']) ? min(100, max(1, (int)$json['limit'])) : 10;
             $offset = ($page - 1) * $limit;
 
-            $sqlCount = "SELECT COUNT(*) FROM books";
+            $active = !empty($json['active']);
+            $where = "";
+            $whereCount = "";
+            if($active){
+                $where = "WHERE b.is_active=1";
+                $whereCount = "WHERE is_active=1";
+            }
+
+            $sqlCount = "SELECT COUNT(*) FROM books $whereCount";
             $stmtCount = $conn->prepare($sqlCount);
             $stmtCount->execute();
             $totalRows = (int)$stmtCount->fetchColumn();
@@ -30,6 +38,7 @@
                     INNER JOIN users u ON b.added_by = u.user_id
                     LEFT JOIN book_authors ba ON b.book_id = ba.book_id
                     LEFT JOIN authors a ON ba.author_id = a.author_id
+                    $where
                     GROUP BY b.book_id
                     ORDER BY b.shelf_location, b.book_id
                     LIMIT :limit OFFSET :offset";
