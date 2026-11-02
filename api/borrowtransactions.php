@@ -84,6 +84,116 @@
                 "totalPages" => $totalPages
             ]);
         }
+        //NEW: transaction-level nga listing (usa ka row kada transaction, dili kada item)
+        function getAllBorrowTransactionSummaries($json){
+            include "connection.php";
+
+            $json = json_decode($json ?? '{}', true) ?: [];
+
+            //ang status sa transaction kay base sa mga items niya:
+            //overdue kung naay lapas na, active kung naay wala pa nabalik, returned kung tanan nabalik na
+            $statusConditions = [
+                'active'   => "t.outstanding_items > 0 AND t.overdue_items = 0",
+                'overdue'  => "t.overdue_items > 0",
+                'returned' => "t.outstanding_items = 0",
+                'all'      => "1 = 1"
+            ];
+            $status = $json['status'] ?? 'active';
+            if(!isset($statusConditions[$status])){
+                $status = 'active';
+            }
+            $where = $statusConditions[$status];
+
+            $page  = isset($json['page']) ? max(1, (int)$json['page']) : 1;
+            $limit = isset($json['limit']) ? min(100, max(1, (int)$json['limit'])) : 10;
+
+            //i-group ang items kada transaction para makuha ang count sa items ug ang status
+            $sqlGrouped = "SELECT bt.transaction_id, bt.borrower_id, bt.processed_by, bt.borrowed_at,
+                                COUNT(bi.borrow_item_id) AS total_items,
+                                SUM(bi.is_returned = 0) AS outstanding_items,
+                                SUM(bi.is_returned = 0 AND bi.expires_at < NOW()) AS overdue_items
+                            FROM borrow_transactions bt
+                            INNER JOIN borrow_items bi ON bt.transaction_id=bi.transaction_id
+                            GROUP BY bt.transaction_id, bt.borrower_id, bt.processed_by, bt.borrowed_at";
+
+            $sqlCount = "SELECT COUNT(*) FROM ($sqlGrouped) t WHERE $where";
+            $stmtCount = $conn->prepare($sqlCount);
+            $stmtCount->execute();
+            $totalRows = (int)$stmtCount->fetchColumn();
+
+            $totalPages = max(1, (int)ceil($totalRows / $limit));
+            $page = min($page, $totalPages);
+            $offset = ($page - 1) * $limit;
+
+            $sql = "SELECT t.transaction_id, t.borrowed_at, t.total_items, t.outstanding_items, t.overdue_items,
+                        CASE
+                            WHEN t.overdue_items > 0 THEN 'overdue'
+                            WHEN t.outstanding_items > 0 THEN 'active'
+                            ELSE 'returned'
+                        END AS status,
+                        borrower.user_id AS borrower_id, borrower.first_name AS borrower_first_name, borrower.last_name AS borrower_last_name,
+                        processor.first_name AS processed_by_first_name, processor.last_name AS processed_by_last_name
+                FROM ($sqlGrouped) t
+                INNER JOIN users borrower ON t.borrower_id=borrower.user_id
+                INNER JOIN users processor ON t.processed_by=processor.user_id
+                WHERE $where
+                ORDER BY t.borrowed_at DESC, t.transaction_id DESC
+                LIMIT :limit OFFSET :offset";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindParam(":limit", $limit, PDO::PARAM_INT);
+            $stmt->bindParam(":offset", $offset, PDO::PARAM_INT);
+            $stmt->execute();
+            $rs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            return json_encode([
+                "data" => $rs,
+                "total" => $totalRows,
+                "page" => $page,
+                "limit" => $limit,
+                "totalPages" => $totalPages
+            ]);
+        }
+        //NEW: usa ka transaction ug ang mga borrow items niya (para sa modal)
+        function getBorrowTransaction($json){
+            include "connection.php";
+
+            $json = json_decode($json, true);
+
+            $sqlHeader = "SELECT bt.transaction_id, bt.borrowed_at,
+                            borrower.first_name AS borrower_first_name, borrower.last_name AS borrower_last_name,
+                            processor.first_name AS processed_by_first_name, processor.last_name AS processed_by_last_name
+                        FROM borrow_transactions bt
+                        INNER JOIN users borrower ON bt.borrower_id=borrower.user_id
+                        INNER JOIN users processor ON bt.processed_by=processor.user_id
+                        WHERE bt.transaction_id=:transaction_id";
+            $stmtHeader = $conn->prepare($sqlHeader);
+            $stmtHeader->bindParam(":transaction_id", $json['transaction_id']);
+            $stmtHeader->execute();
+            $header = $stmtHeader->fetch(PDO::FETCH_ASSOC);
+
+            $sqlItems = "SELECT bi.borrow_item_id, bi.expires_at, bi.is_returned,
+                            CASE
+                                WHEN bi.is_returned = 1 THEN 'returned'
+                                WHEN bi.expires_at < NOW() THEN 'overdue'
+                                ELSE 'active'
+                            END AS status,
+                            bc.accession_number,
+                            b.book_title
+                        FROM borrow_items bi
+                        INNER JOIN book_copies bc ON bi.copy_id=bc.copy_id
+                        INNER JOIN books b ON bc.book_id=b.book_id
+                        WHERE bi.transaction_id=:transaction_id
+                        ORDER BY bi.borrow_item_id";
+            $stmtItems = $conn->prepare($sqlItems);
+            $stmtItems->bindParam(":transaction_id", $json['transaction_id']);
+            $stmtItems->execute();
+            $items = $stmtItems->fetchAll(PDO::FETCH_ASSOC);
+
+            return json_encode([
+                "header" => $header,
+                "items" => $items
+            ]);
+        }
         function addBorrowTransaction($json){
             include "connection.php";
 
@@ -274,6 +384,12 @@
     switch($operation){
         case "getAllBorrowTransactions":
             echo $borrowtransaction->getAllBorrowTransactions($json);
+            break;
+        case "getAllBorrowTransactionSummaries":
+            echo $borrowtransaction->getAllBorrowTransactionSummaries($json);
+            break;
+        case "getBorrowTransaction":
+            echo $borrowtransaction->getBorrowTransaction($json);
             break;
         case "addBorrowTransaction":
             echo $borrowtransaction->addBorrowTransaction($json);

@@ -53,6 +53,96 @@
                 "totalPages" => (int)ceil($totalRows / $limit)
             ]);
         }
+        //NEW: transaction-level nga listing (usa ka row kada return transaction, dili kada item)
+        function getAllReturnTransactionSummaries($json){
+            include "connection.php";
+
+            $json = json_decode($json ?? '{}', true) ?: [];
+
+            $page  = isset($json['page']) ? max(1, (int)$json['page']) : 1;
+            $limit = isset($json['limit']) ? min(100, max(1, (int)$json['limit'])) : 10;
+
+            $sqlCount = "SELECT COUNT(*) FROM return_transactions";
+            $stmtCount = $conn->prepare($sqlCount);
+            $stmtCount->execute();
+            $totalRows = (int)$stmtCount->fetchColumn();
+
+            $totalPages = max(1, (int)ceil($totalRows / $limit));
+            $page = min($page, $totalPages);
+            $offset = ($page - 1) * $limit;
+
+            //borrowers kay GROUP_CONCAT para safe bisan kung lain-lain ang borrower sa items sa isa ka return transaction
+            $sql = "SELECT rt.return_transaction_id, rt.returned_at,
+                        COUNT(ri.return_item_id) AS total_items,
+                        GROUP_CONCAT(DISTINCT CONCAT(borrower.first_name, ' ', borrower.last_name) ORDER BY borrower.last_name SEPARATOR ', ') AS borrowers,
+                        receiver.first_name AS received_by_first_name, receiver.last_name AS received_by_last_name
+                FROM return_transactions rt
+                INNER JOIN return_items ri ON rt.return_transaction_id=ri.return_transaction_id
+                INNER JOIN borrow_items bi ON ri.borrow_item_id=bi.borrow_item_id
+                INNER JOIN borrow_transactions bt ON bi.transaction_id=bt.transaction_id
+                INNER JOIN users borrower ON bt.borrower_id=borrower.user_id
+                INNER JOIN users receiver ON rt.received_by=receiver.user_id
+                GROUP BY rt.return_transaction_id, rt.returned_at, receiver.first_name, receiver.last_name
+                ORDER BY rt.returned_at DESC, rt.return_transaction_id DESC
+                LIMIT :limit OFFSET :offset";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindParam(":limit", $limit, PDO::PARAM_INT);
+            $stmt->bindParam(":offset", $offset, PDO::PARAM_INT);
+            $stmt->execute();
+            $rs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            return json_encode([
+                "data" => $rs,
+                "total" => $totalRows,
+                "page" => $page,
+                "limit" => $limit,
+                "totalPages" => $totalPages
+            ]);
+        }
+        //NEW: usa ka return transaction ug ang mga return items niya (para sa modal)
+        function getReturnTransaction($json){
+            include "connection.php";
+
+            $json = json_decode($json, true);
+
+            $sqlHeader = "SELECT rt.return_transaction_id, rt.returned_at,
+                            GROUP_CONCAT(DISTINCT CONCAT(borrower.first_name, ' ', borrower.last_name) ORDER BY borrower.last_name SEPARATOR ', ') AS borrowers,
+                            receiver.first_name AS received_by_first_name, receiver.last_name AS received_by_last_name
+                        FROM return_transactions rt
+                        INNER JOIN return_items ri ON rt.return_transaction_id=ri.return_transaction_id
+                        INNER JOIN borrow_items bi ON ri.borrow_item_id=bi.borrow_item_id
+                        INNER JOIN borrow_transactions bt ON bi.transaction_id=bt.transaction_id
+                        INNER JOIN users borrower ON bt.borrower_id=borrower.user_id
+                        INNER JOIN users receiver ON rt.received_by=receiver.user_id
+                        WHERE rt.return_transaction_id=:return_transaction_id
+                        GROUP BY rt.return_transaction_id, rt.returned_at, receiver.first_name, receiver.last_name";
+            $stmtHeader = $conn->prepare($sqlHeader);
+            $stmtHeader->bindParam(":return_transaction_id", $json['return_transaction_id']);
+            $stmtHeader->execute();
+            $header = $stmtHeader->fetch(PDO::FETCH_ASSOC);
+
+            $sqlItems = "SELECT ri.return_item_id, ri.condition_notes,
+                            bi.borrow_item_id, bi.expires_at,
+                            bc.accession_number,
+                            b.book_title,
+                            c.condition_desc
+                        FROM return_items ri
+                        INNER JOIN borrow_items bi ON ri.borrow_item_id=bi.borrow_item_id
+                        INNER JOIN book_copies bc ON bi.copy_id=bc.copy_id
+                        INNER JOIN books b ON bc.book_id=b.book_id
+                        INNER JOIN conditions c ON ri.condition_on_return=c.condition_id
+                        WHERE ri.return_transaction_id=:return_transaction_id
+                        ORDER BY ri.return_item_id";
+            $stmtItems = $conn->prepare($sqlItems);
+            $stmtItems->bindParam(":return_transaction_id", $json['return_transaction_id']);
+            $stmtItems->execute();
+            $items = $stmtItems->fetchAll(PDO::FETCH_ASSOC);
+
+            return json_encode([
+                "header" => $header,
+                "items" => $items
+            ]);
+        }
         function addReturnTransaction($json){
             include "connection.php";
 
@@ -160,6 +250,12 @@
     switch($operation){
         case "getAllReturnTransactions":
             echo $returntransaction->getAllReturnTransactions($json);
+            break;
+        case "getAllReturnTransactionSummaries":
+            echo $returntransaction->getAllReturnTransactionSummaries($json);
+            break;
+        case "getReturnTransaction":
+            echo $returntransaction->getReturnTransaction($json);
             break;
         case "addReturnTransaction":
             echo $returntransaction->addReturnTransaction($json);

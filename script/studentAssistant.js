@@ -1,6 +1,8 @@
 import { startBorrow } from "./borrowtransactionmodules/borrow.js";
 import { startReturn } from "./returntransactionmodules/return.js";
 import { startRenew } from "./renewalmodules/renewal.js";
+import { viewBorrowTransaction } from "./borrowtransactionmodules/view.js";
+import { viewReturnTransaction } from "./returntransactionmodules/view.js";
 
 import { addBook } from "./bookmodules/add.js";
 import { viewBook } from "./bookmodules/view.js";
@@ -442,7 +444,7 @@ const getAllBorrows = async(page = 1) => {
     try{
         const [response, outstanding] = await Promise.all([
             axios.get(`${url}/borrowtransactions.php`,{
-                params:{operation:"getAllBorrowTransactions", json: JSON.stringify({ page: page, limit: borrowsPerPage, status: borrowfilter })}
+                params:{operation:"getAllBorrowTransactionSummaries", json: JSON.stringify({ page: page, limit: borrowsPerPage, status: borrowfilter })}
             }),
             axios.get(`${url}/borrowtransactions.php`,{
                 params:{operation:"getAllBorrowTransactions", json: JSON.stringify({ status: 'outstanding' })}
@@ -459,11 +461,9 @@ const getAllBorrows = async(page = 1) => {
             table.innerHTML = `
                 <thead>
                     <tr>
-                        <th>Accession Number</th>
-                        <th>Book Title</th>
                         <th>Borrower</th>
                         <th>Borrowed At</th>
-                        <th>Due Date</th>
+                        <th>Items</th>
                         <th>Processed By</th>
                         <th>Status</th>
                     </tr>
@@ -473,22 +473,25 @@ const getAllBorrows = async(page = 1) => {
 
             if(response.data.data.length === 0){
                 const empty = document.createElement('tr');
-                empty.innerHTML = `<td colspan="7" class="text-center text-muted py-3">No ${borrowfilter === 'all' ? '' : borrowfilter + ' '}borrows found.</td>`;
+                empty.innerHTML = `<td colspan="5" class="text-center text-muted py-3">No ${borrowfilter === 'all' ? '' : borrowfilter + ' '}borrows found.</td>`;
                 tbody.appendChild(empty);
             }
 
             response.data.data.forEach(transaction => {
                 const row = document.createElement('tr');
+                row.style.cursor = "pointer";
                 row.innerHTML = `
-                    <td>${transaction.accession_number}</td>
-                    <td>${transaction.book_title}</td>
                     <td>${transaction.borrower_first_name + " " + transaction.borrower_last_name}</td>
                     <td>${transaction.borrowed_at}</td>
-                    <td>${transaction.expires_at}</td>
+                    <td>${transaction.total_items}</td>
                     <td>${transaction.processed_by_first_name + " " + transaction.processed_by_last_name}</td>
                     <td>${borrowStatusBadges[transaction.status]}</td>
                 `;
                 tbody.appendChild(row);
+
+                row.addEventListener('click', () => {
+                    viewBorrowTransaction(transaction.transaction_id);
+                })
             });
 
             table.appendChild(tbody);
@@ -516,7 +519,7 @@ const getAllReturns = async(page = 1) => {
     const returnstablediv = document.getElementById('returnstablediv');
 
     const response = await axios.get(`${url}/returntransactions.php`,{
-        params:{operation:"getAllReturnTransactions", json: JSON.stringify({ page: page, limit: returnsPerPage })}
+        params:{operation:"getAllReturnTransactionSummaries", json: JSON.stringify({ page: page, limit: returnsPerPage })}
     })
 
     returnstablediv.innerHTML = '';
@@ -525,13 +528,9 @@ const getAllReturns = async(page = 1) => {
     const thead = document.createElement('thead');
     thead.innerHTML = `
         <tr>
-            <th>Accession Number</th>
-            <th>Book Title</th>
             <th>Borrower</th>
-            <th>Due Date</th>
             <th>Returned At</th>
-            <th>Condition on Return</th>
-            <th>Condition Notes</th>
+            <th>Items</th>
             <th>Received By</th>
         </tr>
     `;
@@ -542,25 +541,19 @@ const getAllReturns = async(page = 1) => {
     if(response.status == 200){
         console.log(response.data);
         response.data.data.forEach(transaction => { 
-            let notes;
-            if(!transaction.condition_notes){
-                notes = "N/A";
-            }
-            else{
-                notes = transaction.condition_notes;
-            }
             const row = document.createElement('tr');
+            row.style.cursor = "pointer";
             row.innerHTML = `
-                <td>${transaction.accession_number}</td>
-                <td>${transaction.book_title}</td>
-                <td>${transaction.borrower_first_name + " " + transaction.borrower_last_name}</td>
-                <td>${transaction.expires_at}</td>
+                <td>${transaction.borrowers}</td>
                 <td>${transaction.returned_at}</td>
-                <td>${transaction.condition_desc}</td>
-                <td>${notes}</td>
+                <td>${transaction.total_items}</td>
                 <td>${transaction.received_by_first_name + " " + transaction.received_by_last_name}</td>
             `;
             tbody.appendChild(row);
+
+            row.addEventListener('click', () => {
+                viewReturnTransaction(transaction.return_transaction_id);
+            })
         })
         table.appendChild(tbody);
         returnstablediv.appendChild(table);

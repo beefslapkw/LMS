@@ -9,7 +9,7 @@ export const addPublisher = async(refreshDisplay) => {
     let myHtml = `
         <table class="table table-sm">
             <tr>
-                <td>Author Name</td>
+                <td>Publisher Name</td>
                 <td>
                     <input type="text" id="publisher_name" class="form-control" placeholder="ex: National Bookstore">
                 </td>
