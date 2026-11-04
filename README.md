@@ -106,7 +106,7 @@ Students and faculty can reserve a book copy ahead of time. Reservations follow 
 | Action | Student / Faculty | Student Assistant | Head Librarian |
 |--------|:-----------------:|:-----------------:|:--------------:|
 | Make a reservation | Yes (own) | No | No |
-| Cancel a reservation | Yes (own) | No | No |
+| Cancel a reservation | Yes (own) | Yes | Yes |
 | Fulfill a reservation (borrow) | No | Yes | Yes |
 
 Only the reserver can borrow a reserved copy.
