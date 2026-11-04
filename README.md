@@ -23,7 +23,7 @@ A web-based library management system for a school library. It handles catalogin
 - **Lookup/master tables** - Authors, Publishers, Categories, Genres, Conditions, Statuses, Disposal Reasons
 - **Borrow & return transactions** - multiple books per transaction, with per-item return tracking and condition on return
 - **Renewals** - blocked while the borrower has unpaid fines
-- **Reservations** - students and faculty can reserve available copies and cancel them; staff fulfill a reservation through the normal borrow procedure, and only the reserver can borrow the reserved copy (see [Reservations](#reservations))
+- **Reservations** - students and faculty can reserve available copies and cancel them; staff can cancel reservations or fulfill them through the normal borrow procedure, and only the reserver can borrow the reserved copy (see [Reservations](#reservations))
 - **Fines** - automatic computation for overdue items, with payment recording
 - **Disposal records** - permanent write-off of library property (Head Librarian only)
 - **User management** - create accounts, assign roles, deactivate accounts
@@ -49,7 +49,7 @@ A web-based library management system for a school library. It handles catalogin
 - Full CRUD on all lookup/master tables (Books, Authors, Publishers, Categories, Genres, Conditions, Statuses, Disposal Reasons)
 - Add, edit, and deactivate Book Copies, including Disposal Records
 - Process borrow/return transactions
-- Fulfill reservations as borrow transactions
+- Fulfill or cancel reservations
 - Approve renewals; view and manage fine records
 - Manage users: create accounts, assign roles, deactivate accounts
 - View reports
@@ -58,7 +58,7 @@ A web-based library management system for a school library. It handles catalogin
 
 - Full CRUD on Books, Book Copies, Authors, and Publishers
 - Process borrow/return transactions
-- Fulfill reservations as borrow transactions
+- Fulfill or cancel reservations
 - Record fine payments
 - Process renewals
 - **Cannot:** manage users, delete/deactivate other accounts, or touch Disposal Records
@@ -97,7 +97,7 @@ Students and faculty can reserve a book copy ahead of time. Reservations follow 
 
 1. **Reserve** - a student or faculty member picks an available copy from the catalog and reserves it. The copy's status changes to **Reserved**, which blocks anyone else from borrowing it.
 2. **Hold period** - each reservation has an expiry date (`expires_at`). If it isn't picked up in time, the reservation expires and the copy becomes available again.
-3. **Cancel** - the reserver can cancel their own reservation before it is fulfilled, which releases the copy.
+3. **Cancel** - the reserver can cancel their own reservation before it is fulfilled, and library staff can cancel any reservation. Either way, the copy is released.
 4. **Fulfill** - when the reserver comes to the library, the Head Librarian or Student Assistant processes it as a normal borrow transaction. The resulting borrow item is linked back to the reservation item (`borrow_item_id`).
 5. **Borrow rules apply** - the borrower's limit (3 books for students, 10 for faculty), loan period, and unpaid-fine checks are validated as usual.
 
@@ -122,7 +122,7 @@ Only the reserver can borrow a reserved copy.
 Main entities:
 
 - **Users / Roles / Departments**
-- **Books** (title-level) and **Book_Copies** (physical copies)
+- **Books** (title-level), **Book_Authors** (links books to authors), and **Book_Copies** (physical copies)
 - **Categories, Genres, Authors, Publishers, Conditions, Statuses, Disposal Reasons**
 - **Borrow_Transactions** (header) and **Borrow_Items** (line items)
 - **Return_Transactions** (header) and **Return_Items** (line items)
@@ -130,24 +130,18 @@ Main entities:
 - **Reservation_Transactions** and **Reservation_Items**, plus a **Reservation_Statuses** lookup
 - **Disposal_Records**
 
-> Add your ERD image here, for example: `![ERD](docs/erd.png)`
+![Entity Relationship Diagram](docs/erd.png)
 
 ## Project Structure
 
-> Adjust this to match your actual folders and files.
-
 ```
-lms/
-├── api/                    # PHP API endpoints (books.php, bookcopies.php, ...)
-├── config/                 # Database connection and shared config
-├── js/                     # Vanilla JS (headLibrarian.js, auth-guard.js, ...)
-├── css/                    # Custom styles
-├── database/               # SQL schema and seed data
-├── index.html              # Login page
-├── headLibrarian.html      # Head Librarian dashboard
-├── studentAssistant.html   # Student Assistant dashboard
-├── student.html            # Student dashboard
-├── faculty.html            # Faculty dashboard
+LMS/
+├── api/            # PHP API endpoints (books.php, bookcopies.php, ...)
+├── database/       # SQL schema and seed data
+├── script/         # Vanilla JS (headLibrarian.js, auth-guard.js, ...)
+├── templates/      # Role-based pages (headLibrarian, studentAssistant, student, faculty)
+├── ws-server/      # WebSocket server
+├── index.html      # Login page
 └── README.md
 ```
 
@@ -175,7 +169,7 @@ lms/
 3. **Create the database**
 
    - Open phpMyAdmin (or your MySQL client)
-   - Create a database, e.g. `lms_db`
+   - Create a database named `librarydb`
    - Import the SQL file from `database/`
 
 4. **Configure the database connection**
@@ -192,14 +186,12 @@ lms/
 
 ### Default Accounts
 
-> Replace with your seeded accounts, and change the passwords before any real deployment.
-
 | Role | Username | Password |
 |------|----------|----------|
-| Head Librarian | `<username>` | `<password>` |
-| Student Assistant | `<username>` | `<password>` |
-| Student | `<username>` | `<password>` |
-| Faculty | `<username>` | `<password>` |
+| Head Librarian | `pitok` | `12345` |
+| Student Assistant | `beefslapkw` | `12345` |
+| Student | `student` | `12345` |
+| Faculty | `faculty` | `12345` |
 
 ## Configuration
 
@@ -208,7 +200,7 @@ Database settings (example):
 ```php
 <?php
 $host = "localhost";
-$db   = "lms_db";
+$db   = "librarydb";
 $user = "root";
 $pass = "";
 ```
